@@ -47,8 +47,8 @@ module.exports = (sequelize, DataTypes) => {
         notNull: { msg: 'User must have an e-mail address'},
         notEmpty: { msg: 'E-mail address must not be empty'},
         isEmail: { msg: 'This is not an e-mail address'},
-        unique: true
       },
+      unique: true
     },
     password: {
       type: DataTypes.STRING,
@@ -56,9 +56,30 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notNull: { msg: 'User must have a password'},
         notEmpty: { msg: 'Password must not be empty'},
-        len: [8, 18]
       }
     },
+    birthdate: {
+      allowNull: false,
+      type: DataTypes.DATEONLY,
+      validate: {
+        notNull: { msg: 'User must have a birthdate'},
+        notEmpty: { msg: 'Birthdate must not be empty'},
+        isDate: true
+      }
+    },
+    gender: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notNull: { msg: 'User must indicate a gender'},
+        notEmpty: { msg: 'Gender must not be empty'}
+      }
+    },
+    imageUrl: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "http://localhost:5000/images/PP_default.png"
+    }
   }, {
     sequelize,
     tableName: 'users',

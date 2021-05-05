@@ -28,6 +28,14 @@ module.exports = {
         type: DataTypes.STRING,
         allowNull: false
       },
+      birthdate: {
+        allowNull: false,
+        type: DataTypes.DATEONLY
+      },
+      gender: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE
