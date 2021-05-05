@@ -79,7 +79,7 @@ exports.modifyUser = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-    const uuid = req.body.uuid;
+    const uuid = req.body.userUuid;
     try {
         const user = await User.findOne({ where: { uuid } })
         if (!user) {

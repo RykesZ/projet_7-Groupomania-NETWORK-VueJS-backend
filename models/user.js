@@ -75,11 +75,31 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: { msg: 'Gender must not be empty'}
       }
     },
-    imageUrl: {
+    /*imageUrl: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "http://localhost:5000/images/PP_default.png"
-    }
+    },
+    publicationsCreated: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: ""
+    },
+    publicationsLiked: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: ""
+    },
+    publicationsMasked: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: ""
+    },
+    commentsCreated: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: ""
+    },*/
   }, {
     sequelize,
     tableName: 'users',
