@@ -10,6 +10,6 @@ router.get('/:uuid', auth, publicationCtrl.getOnePublication);
 router.get('/', auth, publicationCtrl.getAllPublications);
 router.put('/:uuid', auth, multer, publicationCtrl.modifyPublication);
 router.delete('/:uuid', auth, publicationCtrl.deletePublication);
-//router.post('/:uuid/like', auth, publicationCtrl.likePublication);
+router.post('/:uuid/like', auth, publicationCtrl.likePublication);
 
 module.exports = router;
