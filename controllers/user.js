@@ -24,21 +24,28 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ where: { email } });
+        console.log({ user });
+        let upassword = user.password;
+        console.log({ upassword })
         if (!user) {
             return res.status(401).json({ error: 'Utilisateur non trouvé !' });
         }
-        if (bcrypt.compare(password, user.password)) {
-            res.status(200).json({
-                userUuid: user.uuid,
-                token: jwt.sign(
-                    { userUuid: user.uuid },
-                    'RANDOM_TOKEN_SECRET',
-                    { expiresIn: '24h'}
-                )
-            });
-        } else {
-            return res.status(401).json({ error: 'Mot de passe incorrect !' });
-        }
+        bcrypt.compare(password, user.password)
+            .then(valid => {
+                if (!valid) {
+                    return res.status(401).json({ error: 'Mot de passe incorrect !' });
+                }
+                res.status(200).json({
+                    userUuid: user.uuid,
+                    token: jwt.sign(
+                        { userUuid: user.uuid },
+                        'RANDOM_TOKEN_SECRET',
+                        { expiresIn: '24h'}
+                    )
+                });
+            })
+            .catch(error => res.status(500).json({ error }));
+            
     } catch(error) {
         return res.status(500).json({ error });
     };
@@ -64,11 +71,14 @@ exports.modifyUser = async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: 'Utilisateur non trouvé !' });
         }
-        let hash = await bcrypt.hash(password, 10);
+        let hash = "";
+        if (password) {
+            hash = await bcrypt.hash(password, 10);
+            user.password = hash;
+        }
         user.firstname = firstname;
         user.lastname = lastname;
         user.email = email;
-        user.password = hash;
         user.birthdate = birthdate;
         user.gender = gender;
         await user.save();
