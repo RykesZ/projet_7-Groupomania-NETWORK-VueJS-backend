@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       this.belongsTo(User, { foreignKey: 'autorId', as: 'user' })
     }
   };
-  comment.init({
+  Comment.init({
     uuid: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4
@@ -23,15 +23,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: false,
       validate: {
-        notNull: { msg: 'Publication must have a text'},
+        notNull: { msg: 'Comment must have a text'},
       }
     },
     autorId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
-        notNull: { msg: 'Publication must have an autor'},
-        notEmpty: { msg: 'Publication must have a valid autor'}
+        notNull: { msg: 'Comment must have an autor'},
+        notEmpty: { msg: 'Comment must have a valid autor'}
       }
     }
   }, {

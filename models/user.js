@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(Publication, { foreignKey: 'autorId', as: 'publications' })
     }
     toJSON() {
-      return { ...this.get(), id: undefined };
+      return { ...this.get(), id: undefined, password: undefined, email: undefined, createdAt: undefined, updatedAt: undefined };
     };
   };
   User.init({
@@ -103,7 +103,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     tableName: 'users',
-    modelName: 'User',
+    modelName: 'User'
   });
   return User;
 };
