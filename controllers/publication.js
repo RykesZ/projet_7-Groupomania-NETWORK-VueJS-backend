@@ -66,6 +66,9 @@ exports.modifyPublication = async (req, res) => {
 exports.deletePublication = async (req, res) => {
     const uuid = req.params.uuid;
     try {
+        const publication = await Publication.findOne({ where: { uuid }});
+        const filename = publication.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`);
         await Publication.destroy({ where: { uuid } })
         return res.status(200).json({ message: 'Sauce supprimée'});
     } catch(err) {
