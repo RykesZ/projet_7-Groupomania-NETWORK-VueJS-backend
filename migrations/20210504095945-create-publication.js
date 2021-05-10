@@ -33,6 +33,11 @@ module.exports = {
         allowNull: false,
         defaultValue: 0
       },
+      comments: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: ""
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE

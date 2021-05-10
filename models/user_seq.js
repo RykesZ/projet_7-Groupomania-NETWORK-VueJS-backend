@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 const {
   Model
 } = require('sequelize');
@@ -8,11 +8,15 @@ module.exports = (sequelize, DataTypes) => {
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
-     */
+     */ /*
+     static associate({ Comment }) {
+      this.hasMany(Comment, { foreignKey: 'autorId', as: 'comments'});
+     };
+     
     static associate({ Publication }) {
       // define association here
-      this.hasMany(Publication, { foreignKey: 'autorId', as: 'publications' })
-    }
+      this.hasMany(Publication, { foreignKey: 'autorId', as: 'publications' });
+    };
     toJSON() {
       return { ...this.get(), id: undefined, password: undefined, email: undefined, createdAt: undefined, updatedAt: undefined };
     };
@@ -75,7 +79,7 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: { msg: 'Gender must not be empty'}
       }
     },
-    /*imageUrl: {
+    imageUrl: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "http://localhost:5000/images/PP_default.png"
@@ -99,11 +103,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: ""
-    },*/
+    },
   }, {
     sequelize,
     tableName: 'users',
     modelName: 'User'
   });
   return User;
-};
+};*/

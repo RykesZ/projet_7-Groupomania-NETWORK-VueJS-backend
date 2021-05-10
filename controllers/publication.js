@@ -1,4 +1,5 @@
-const { sequelize, User, Publication } = require('../models');
+const User = require('../models/users.model.js');
+const Publication = require('../models/publication_seq.js')
 const fs = require('fs');
 
 // Fonction qui permet de créer une nouvelle publication dans la base de données
@@ -67,13 +68,13 @@ exports.deletePublication = async (req, res) => {
     const uuid = req.params.uuid;
     try {
         const publication = await Publication.findOne({ where: { uuid }});
-        const filename = publication.imageUrl.split('/images/')[1];
-        fs.unlink(`images/${filename}`);
+        /*const filename = publication.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`);*/
         await Publication.destroy({ where: { uuid } })
         return res.status(200).json({ message: 'Publication supprimée'});
     } catch(err) {
         console.log(err);
-        return res.status(500).json({ error: "Could not get publications"});
+        return res.status(500).json({ error: "Could not delete publication"});
     };
 };
 

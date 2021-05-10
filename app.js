@@ -1,6 +1,6 @@
-const express = require('express');
-const { sequelize } = require('./models');
+/*const express = require('express');
 const path = require('path');
+
 
 const userRoutes = require('./routes/user');
 const publicationRoutes = require('./routes/publication');
@@ -9,16 +9,7 @@ const commentRoutes = require('./routes/comment');
 const app = express();
 app.use(express.json());
 
-app.listen({ port: 5000 }, async () => {
-    console.log('Server up on http://localhost:5000');
-    try {
-        await sequelize.authenticate();
-        console.log('Database Connected');
-    } catch(err) {
-        console.log('Unable to connect with database')
-    }
-    
-});
+
 
 // Définition des headers autorisés pour les requêtes entrantes
 app.use((req, res, next) => {
@@ -33,4 +24,4 @@ app.use((req, res, next) => {
   app.use('/api/publications', publicationRoutes);
   app.use('/api/comments', commentRoutes);
 
-  module.exports = app;
+  module.exports = app;*/

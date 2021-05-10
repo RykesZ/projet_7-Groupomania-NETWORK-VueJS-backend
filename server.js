@@ -1,47 +1,32 @@
-/*const http = require('http');
-const app = require('./app');
+require('dotenv').config()
+const express = require("express");
+const path = require('path');
 
-const normalizePort = val => {
-  const port = parseInt(val, 10);
 
-  if (isNaN(port)) {
-    return val;
-  }
-  if (port >= 0) {
-    return port;
-  }
-  return false;
-};
-const port = normalizePort(process.env.PORT || '5000');
-app.set('port', port);
+const userRoutes = require('./routes/user');
+const publicationRoutes = require('./routes/publication');
+const commentRoutes = require('./routes/comment');
 
-const errorHandler = error => {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-  const address = server.address();
-  const bind = typeof address === 'string' ? 'pipe ' + address : 'port: ' + port;
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges.');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use.');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-};
+const app = express();
 
-const server = http.createServer(app);
 
-server.on('error', errorHandler);
-server.on('listening', () => {
-  const address = server.address();
-  const bind = typeof address === 'string' ? 'pipe ' + address : 'port ' + port;
-  console.log('Listening on ' + bind);
+// parse requests of content-type: application/json
+app.use(express.json());
+
+// parse requests of content-type: application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
+
+// simple route
+/*app.get("/", (req, res) => {
+  res.json({ message: "Welcome to bezkoder application." });
+});*/
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use('/api/auth', userRoutes);
+//app.use('/api/publications', publicationRoutes);
+//app.use('/api/comments', commentRoutes);
+
+// set port, listen for requests
+app.listen(5000, () => {
+  console.log("Server is running on http://localhost:5000");
 });
-
-server.listen(port);*/
