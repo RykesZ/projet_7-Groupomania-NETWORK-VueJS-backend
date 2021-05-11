@@ -1,5 +1,7 @@
 //const { json } = require('sequelize/types');
-const { sequelize, User, Publication, Comment } = require('../models/index_seq');
+const User = require('../models/user');
+const Publication = require('../models/publication_seq');
+const Comment = require('../models/comment_seq');
 
 exports.createComment = async (req, res) => {
     // Récupère le texte du commentaire, ainsi que l'uuid de son auteur et de la publciation à laquelle il apparatient

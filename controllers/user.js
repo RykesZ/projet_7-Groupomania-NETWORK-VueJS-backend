@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../models/users.model.js');
+const User = require('../models/user');
+const sql = require('../models/db');
 
 exports.signup = async (req, res) => {
     if (!req.body) {
@@ -12,9 +13,10 @@ exports.signup = async (req, res) => {
     try {
         let hash = await bcrypt.hash(password, 10);
         try {
-            const user = await new User({ firstname, lastname, email, password: hash, birthdate, gender });
-            User.signup(user, (err, data) => {
-                return res.status(201).json({ data });
+            const query = `INSERT INTO users (firstname, lastname, email, password, birthdate, gender, imageUrl, publicationsCreated, publicationsLiked, publicationsMasked, commentsCreated) VALUES (?, ?, ?, ?, ?, ?, "http://localhost:5000/images/PP_default.png", "", "", "", "");`
+            sql.query(query, [firstname, lastname, email, hash, birthdate, gender], function(err, result) {
+                if (err) throw (err);
+                return res.status(201).json({ message: "user added", result });
             });
         } catch(error) {
             console.log(error);
@@ -26,7 +28,7 @@ exports.signup = async (req, res) => {
     };
 };
 
-exports.login = async (req, res) => {
+/*exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ where: { email } });
@@ -55,55 +57,70 @@ exports.login = async (req, res) => {
     } catch(error) {
         return res.status(500).json({ error });
     };
-};
+};*/
 
 exports.getUserInfo = async (req, res) => {
-    const uuid = req.body.uuid;
+    if (!req.body) {
+        return res.status(400).json({
+          message: "Demand can not be empty!"
+        });
+    }
+    const id = req.body.userId;
     try {
-        const user = await User.findOne({ where: { uuid } })
-        if (!user) {
-            return res.status(401).json({ error: 'Utilisateur non trouvé !' });
-        }
-        return res.status(200).json(user)
-    } catch(error) {
-        return res.status(500).json({ error })
+        const query = `SELECT firstname, lastname, birthdate, gender FROM users WHERE id = ? ;`
+        sql.query(query, id, function(err, result, fields) {
+            if (err) throw (err);
+            if (result.length === 0) {
+                return res.status(500).json("user not found");
+            };
+            return res.status(201).json({ message: "user found", result });
+        });
+    } catch(err) {
+        return res.status(500).json({ err }, "user not found")
     };
 };
 
 exports.modifyUser = async (req, res) => {
-    const { uuid, firstname, lastname, email, password, birthdate, gender } = req.body;
+    const { userId, firstname, lastname, email, password, birthdate, gender, imageUrl } = req.body;
     try {
-        const user = await User.findOne({ where: { uuid } });
-        if (!user) {
-            return res.status(401).json({ error: 'Utilisateur non trouvé !' });
-        }
-        let hash = "";
+        let hash = null;
         if (password) {
             hash = await bcrypt.hash(password, 10);
-            user.password = hash;
         }
-        user.firstname = firstname;
-        user.lastname = lastname;
-        user.email = email;
-        user.birthdate = birthdate;
-        user.gender = gender;
-        await user.save();
-        return res.status(201).json({ message: 'Utilisateur modifié'});
-    } catch(error) {
-        return res.status(500).json({ error });
+        const query = "UPDATE users SET firstname = ?, lastname = ?, email = ?, password = ?, birthdate = ?, gender = ?, imageUrl = ? WHERE id = ?;"
+        sql.query(query, [firstname, lastname, email, hash, birthdate, gender, imageUrl, userId], (err, result) => {
+                if (err) throw (err);
+                if (result.affectedRows == 0) {
+                    console.log(result);
+                    return res.status(500).json("user not found");
+                }
+                return res.status(200).json({ message: "user updated", result })
+            }
+        );
+    } catch(err) {
+        console.log(err);
+        return res.status(500).json({ err });
     }
 };
 
 exports.deleteUser = async (req, res) => {
-    const uuid = req.body.userUuid;
+    const userId = req.body.userId;
     try {
-        const user = await User.findOne({ where: { uuid } })
-        if (!user) {
-            return res.status(401).json({ error: 'Utilisateur non trouvé !' });
-        }
-        await user.destroy();
-        return res.status(200).json({ message: 'Utilisateur supprimé' })
-    } catch(error) {
-        return res.status(500).json({ error })
+        const query = "DELETE FROM users WHERE id = ? ;"
+        sql.query(query, userId, (err, result) => {
+            if (err) throw (err);
+            if (result.affectedRows == 0) {
+                console.log(result);
+                return res.status(500).json("user not found");
+            }
+            return res.status(200).json({ message: "user deleted" })
+        });
+    } catch(err) {
+        return res.status(500).json({ err })
     };
 };
+
+
+
+
+

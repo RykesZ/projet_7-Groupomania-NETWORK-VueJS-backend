@@ -1,4 +1,4 @@
-const User = require('../models/users.model.js');
+const User = require('../models/user');
 const Publication = require('../models/publication_seq.js')
 const fs = require('fs');
 

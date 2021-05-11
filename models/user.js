@@ -50,14 +50,14 @@ User.modify = (id, user, result) => {
     sql.query(
         "UPDATE users SET firsname = ?, lastname = ?, email = ?, password = ?, birthdate = ?, gender = ?, imageUrl = ? WHERE id = ?",
         [user.firstname, user.lastname, user.email, user.password, user.birthdate, user.gender, user.imageUrl, id],
-        (err, res) => {
+        (err, result) => {
             if (err) {
                 console.log("error :", err);
                 result(null, err);
                 return;
             }
 
-            if (res.affectedRows == 0) {
+            if (result.affectedRows == 0) {
                 // not found user with the id
                 result({ kind: "not_found" }, null);
                 return
