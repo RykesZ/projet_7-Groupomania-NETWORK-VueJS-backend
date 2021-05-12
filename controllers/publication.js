@@ -4,9 +4,9 @@ const fs = require('fs');
 
 // Fonction qui permet de créer une nouvelle publication dans la base de données
 exports.createPublication = async (req, res) => {
-    const { text, autorUuid } = req.body;
+    const text = req.body.text;
+    const autorId = req.body.userId;
     try {
-        const user = await User.findOne({ where: { uuid: autorUuid }});
         
         const publication = new Publication({ text, autorId: user.id});
         if (req.file) {

@@ -9,17 +9,18 @@ module.exports = (req, res, next) => {
     Puis cherche le user associé à ce token*/
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
-    const uuid = decodedToken.uuid;
+    const tokenId = decodedToken.userId;
+    const userId = Number(req.body.userId);
     /* Compare le userId associé à ce token et celui fourni par la requête. Si les deux sont identiques, 
     permet l'accès à la fonction suivante de la route, sinon renvoie une erreur */
-    if (req.body.uuid && req.body.uuiId !== uuid) {
+    if (userId && userId !== tokenId) {
       throw 'Invalid user ID';
     } else {
+      //res.locals.tokenId = tokenId;
       next();
     }
-  } catch {
+  } catch(error) {
     res.status(401).json({
-      error: new Error('Invalid request!')
-    });
+      error });
   }
 };
