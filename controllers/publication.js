@@ -10,7 +10,7 @@ exports.createPublication = async (req, res) => {
         if (req.file) {
             imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         };
-        const query = `INSERT INTO publications (text, autorId, imageUrl, usersLiked, likes, comments) VALUES (?, ?, ?, "", 0, "");`
+        const query = `INSERT INTO publications (text, autorId, imageUrl, likes) VALUES (?, ?, ?, 0);`
         const result = await sql.query(query, [text, autorId, imageUrl]);
 
         if (result[0].affectedRows === 1) {
@@ -58,15 +58,15 @@ exports.getOnePublication = async (req, res) => {
 };
 
 exports.modifyPublication = async (req, res) => {
-    const { text, autorId } = req.body;
+    const text = req.body.text;
     const pubId = req.params.pubId;
     try {
         let imageUrl = "";
         if (req.file) {
             imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         };
-        const query = `UPDATE publications [text = ?, autorId = ?, imageUrl = ?];`
-        const result = await sql.query(query, [text, autorId, imageUrl]);
+        const query = `UPDATE publications SET text = ?, imageUrl = ? WHERE id = ?;`
+        const result = await sql.query(query, [text, imageUrl, pubId]);
 
         if (result[0].affectedRows === 1) {
             return res.status(200).json({ message: "publication modified" });
@@ -82,114 +82,115 @@ exports.modifyPublication = async (req, res) => {
 exports.deletePublication = async (req, res) => {
     const pubId = req.params.pubId;
     try {
-        const query = "DELETE FROM publications WHERE id = ?;"
-        const result = await sql.query(query, pubId);
+        const query1 = "SELECT * FROM publications WHERE id = ?;"
+        const result = await sql.query(query1, pubId);
+        const response = result[0][0];
+        console.log(response);
+        if (response.imageUrl != '') {
+            try {
+                const filename = await response.imageUrl.split('/images/')[1];
+                fs.unlink(`images/${filename}`, (error) => {
+                    if (error) {
+                        throw(error);
+                    }
+                });
+            } catch(error) {
+                console.log(error);
+                return res.status(500).json({ message: "Could not delete file attached to publication"});
+            };
+        }
+        const query2 = "DELETE FROM publications WHERE id = ?;"
+        const result2 = await sql.query(query2, pubId);
 
-        if (result[0].affectedRows === 1) {
+        if (result2[0].affectedRows === 1) {
             return res.status(200).json({ message: "publication deleted" });
         } else if (result[0].affectedRows === 0) {
             throw(error);
         };
-
-        /*const filename = publication.imageUrl.split('/images/')[1];
-        fs.unlink(`images/${filename}`);*/
-    } catch(err) {
-        console.log(err);
-        return res.status(500).json({ error: "Could not delete publication"});
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({ message: "Could not delete publication"});
     };
 };
 
-// Besoin de : uuid de la publication en paramètre d'URL, like(int de valeur 0 ou 1), userUuid(uuid de l'utilisateur ayant liké/disliké)
+// Besoin de : pubId (id de la publication) en paramètre d'URL, like(int de valeur 0 ou 1), userId(id de l'utilisateur ayant liké/disliké)
 exports.likePublication = async (req, res) => {
+    const pubId = req.params.pubId;
+    const userId = req.body.userId;
+    const like = req.body.like;
+    console.log(pubId);
+
     try {
-        // Crée un nouveau type d'exception pour le switch à venir
-        const switchException = (message, status) => {
-            this.message = message;
-            this.status = status;
+        const querySelect = "SELECT usersLiked FROM publications WHERE id = ?;"
+        const result = await sql.query(querySelect, pubId);
+        const response = result[0][0];
+        console.log(response);
+        if (result.length === 0) {
+            return res.status(500).json({message: "this publication does not exist"});
         };
-        // Cherche la publication correspondante d'après l'uuid fournie par la requête
-        const publication = await Publication.findOne({ where: { uuid: req.params.uuid } });
+        let usersLiked = [];
+        if (response.usersLiked != null) {
+            usersLiked = response.usersLiked.split(',');
+        }
+        console.log(usersLiked);
         // En fonction de la valeur de "like" dans le corps de la requête, donne différents résultats
-            switch (req.body.like) {
-                /* Si like = 1, teste d'abord si le user à l'origine de la requête n'existe déjà pas dans la liste
-                usersLiked de la sauce, puis, si il n'y est pas, l'y ajoute, recalcule le nombre de likes de la sauce en 
-                fonction de la longueur de l'array usersLiked, et met à jour la sauce dans la base de données
-                avec les infos de la sauce modifiée, avant d'envoyer une réponse de status 201 au frontend 
-                Si le user est déjà dans usersLiked, throw une switchException avec un message d'erreur et un status code */
-                case 1:
-                    if (publication.usersLiked.indexOf(req.body.userUuid) === -1) {
-                        try {
-                        publication.usersLiked.push(req.body.userUuid);
-                        publication.likes = publication.usersLiked.length;
-                        await Publication.update({ publication }, { where: { uuid } })
-                        return res.status(201).json({ message : "Post liked!" });
-                        } catch(error) {
-                            return res.status(409).json({ error: error });
+        switch (like) {
+            /* Si like = 1, teste d'abord si le user à l'origine de la requête n'existe déjà pas dans la liste
+            usersLiked de la publication, puis, si il n'y est pas, l'y ajoute, recalcule le nombre de likes de la publication en 
+            fonction de la longueur de l'array usersLiked, et met à jour la publication dans la base de données
+            avec les infos de la publication modifiée, avant d'envoyer une réponse de status 201 au frontend 
+            Si le user est déjà dans usersLiked, envoie un message d'erreur et un status code */
+            case 1:
+                if (usersLiked.indexOf(userId) === -1) {
+                    try {
+                        usersLiked.push(userId);
+                        console.log(usersLiked);
+                        const usersLikedToUpdate = usersLiked.join(',');
+                        console.log(usersLikedToUpdate);
+                        const query1 = `UPDATE publications SET usersLiked = ?, likes = ? WHERE id = ?;`
+                        const result1 = await sql.query(query1, [usersLikedToUpdate, usersLiked.length, pubId]);
+                        if (result1[0].affectedRows === 1) {
+                            return res.status(201).json({ message: "publication liked" });
+                        } else if (result1[0].affectedRows === 0) {
+                            throw(error);
                         };
-                    } else {
-                        throw new switchException("User already likes this post!", 200);
+                    } catch(error) {
+                        return res.status(409).json({ error: error });
                     };
-                    break;
-                /* Si like = 0, teste d'abord si le user à l'origine de la requête existe dans la liste
-                usersLiked de la sauce, puis : 
-                -si il y est, le retire et recalcule le nombre de likes de la sauce en 
-                fonction de la longueur de l'array usersLiked, et met à jour la sauce dans la base de données
-                avec les infos de la sauce modifiée, avant d'envoyer une réponse de status 201 au frontend 
-                -s'il n'y est pas, teste si le user à l'origine de la requête existe dans la liste
-                usersDisliked de la sauce, et s'il y est, le retire et recalcule le nombre de dislikes de la sauce en 
-                fonction de la longueur de l'array usersDisliked, et met à jour la sauce dans la base de données
-                avec les infos de la sauce modifiée, avant d'envoyer une réponse de status 201 au frontend 
-                Si le user n'est dans aucun des deux arrays, throw une switchException avec un message d'erreur et un status code */
-                case 0:
-                    if ((userToRemoveIndex = publication.usersLiked.indexOf(req.body.userUuid)) !== -1) {
-                        try {
-                        publication.usersLiked.splice(userToRemoveIndex, 1)
-                        publication.likes = publication.usersLiked.length;
-                        await Publication.update({ publication }, { where: { uuid } })
-                        return res.status(201).json({ message : "Post unliked!" });
-                        } catch(error) {
-                            return res.status(409).json({ error: error });
+                } else {
+                    return res.status(200).json({ message: "User already likes this post" });
+                };
+            break;
+            /* Si like = 0, teste d'abord si le user à l'origine de la requête existe dans la liste
+            usersLiked de la publication, puis : 
+            -si il y est, le retire et recalcule le nombre de likes de la publication en 
+            fonction de la longueur de l'array usersLiked, et met à jour la publication dans la base de données
+            avec les infos de la publication modifiée, avant d'envoyer une réponse de status 201 au frontend 
+            Si le user n'est pas l'array, envoie un message d'erreur et un status code */
+            case 0:
+                if (usersLiked.indexOf(userId) !== -1) {
+                    try {
+                        usersLiked.splice(userId, 1);
+                        const usersLikedToUpdate = usersLiked.join(',');
+                        const query0 = `UPDATE publications SET usersLiked = ?, likes = ? WHERE id = ?;`
+                        const result0 = await sql.query(query0, [usersLikedToUpdate, usersLiked.length, pubId]);
+                        if (result0[0].affectedRows === 1) {
+                            return res.status(201).json({ message: "publication unliked" });
+                        } else if (result0[0].affectedRows === 0) {
+                            throw(error);
                         };
-                    } else if ((userToRemoveIndex = publication.usersDisliked.indexOf(req.body.userUuid)) !== -1) {
-                        try {
-                        publication.usersDisliked.splice(userToRemoveIndex, 1)
-                        publication.dislikes = publication.usersDisliked.length;
-                        await Publication.update({ publication }, { where: { uuid } })
-                        return res.status(201).json({ message : "Post unliked!" });
-                        } catch(error) {
-                            return res.status(409).json({ error: error });
-                        };
-                    } else {
-                        throw new switchException("User does not have an opinion about this post.", 200);
+                    } catch(error) {
+                        return res.status(409).json({ error: error });
                     };
-                    break;
-                // Si la valeur de like ne correspond à aucune valeur admise par le switch, throw une switchException
-                default:
-                    throw new switchException("Like value is incorrect.", 400);
+                } else {
+                    return res.status(200).json({ message: "User does not an opinion about this post" });
+                };
+            break;
+            // Si la valeur de like ne correspond à aucune valeur admise par le switch, throw une switchException
+            default:
+                return res.status(400).json({ message: "Like value is incorrect" });
         }
     } catch(error) {
-        res.status(error.status).json({error: error.message });
-    };
+        res.status(400).json({ error });
+    };  
 };
-
-/*app.post('/publications', async (req, res) => {
-    const { userUuid, text } = req.body;
-    try {
-        const user = await User.findOne({ where: { uuid: userUuid }});
-        const publication = await Publication.create({ text, autorId: user.id });
-        return res.json(publication);
-    } catch(err) {
-        console.log(err);
-        return res.status(500).json({ error: "Could not create publication"});
-    };
-});
-
-app.get('/publications', async (req, res) => {
-    try {
-        const publications = await Publication.findAll({ include: 'user' });
-        return res.json(publications);
-    } catch(err) {
-        console.log(err);
-        return res.status(500).json({ error: "Could not get publication"});
-    };
-});*/
