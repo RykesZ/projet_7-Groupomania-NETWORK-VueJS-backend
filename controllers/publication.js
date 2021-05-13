@@ -1,5 +1,4 @@
-const User = require('../models/user');
-const Publication = require('../models/publication_seq.js')
+const sql = require('../models/db');
 const fs = require('fs');
 
 // Fonction qui permet de créer une nouvelle publication dans la base de données
@@ -7,17 +6,21 @@ exports.createPublication = async (req, res) => {
     const text = req.body.text;
     const autorId = req.body.userId;
     try {
-        
-        const publication = new Publication({ text, autorId: user.id});
+        let imageUrl = "";
         if (req.file) {
-            publication.imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+            imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         };
+        const query = `INSERT INTO publications (text, autorId, imageUrl, usersLiked, likes, comments) VALUES (?, ?, ?, "", 0, "");`
+        const result = await sql.query(query, [text, autorId, imageUrl]);
 
-        await publication.save();
-        return res.status(201).json({ message: 'Publication créée'});
-    } catch(err) {
-        console.log(err);
-        return res.status(500).json({ error: 'Could not create publication'});
+        if (result[0].affectedRows === 1) {
+            return res.status(201).json({ message: "publication created" });
+        } else if (result[0].affectedRows === 0) {
+            throw(error);
+        };
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({ msg: 'Could not create publication' });
     };
 };
 
@@ -25,19 +28,29 @@ exports.getAllPublications = async (req, res) => {
     const pageNumber = req.body.pageNumber;
     const offset = (pageNumber - 1) * 10;
     try {
-        const publications = await Publication.findAll({ include: 'user', order: [[ 'createdAt', 'DESC']], offset: offset, limit: 10 });
-        return res.json(publications);
-    } catch(err) {
-        console.log(err);
-        return res.status(500).json({ error: "Could not get publications"});
+        const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id ORDER BY date_insertion DESC LIMIT 10 OFFSET ?;"
+        const result = await sql.query(query, offset);
+        const response = result[0][0];
+        if (result.length === 0) {
+            return res.status(500).json({message: "no publications to display"});
+        };
+        return res.status(201).json({ response });
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({ msg: "Could not get publications" });
     };
 };
 
 exports.getOnePublication = async (req, res) => {
-    const uuid = req.params.uuid;
+    const pubId = req.params.pubId;
     try {
-        const publication = await Publication.findOne({ where: { uuid }, include: 'user'});
-        return res.json(publication);
+        const query = "SELECT * FROM publications WHERE id = ?;"
+        const result = await sql.query(query, pubId);
+        const response = result[0][0];
+        if (result.length === 0) {
+            return res.status(500).json({message: "no publications to display"});
+        };
+        return res.status(201).json({ response });
     } catch(err) {
         console.log(err);
         return res.status(500).json({ error: "Could not get publications"});
@@ -45,33 +58,41 @@ exports.getOnePublication = async (req, res) => {
 };
 
 exports.modifyPublication = async (req, res) => {
-    const { text, autorUuid } = req.body;
-    const uuid = req.params.uuid;
+    const { text, autorId } = req.body;
+    const pubId = req.params.pubId;
     try {
-        const user = await User.findOne({ where: { uuid: autorUuid }});
-
-        let publication = await Publication.findOne({ where: { uuid }, include: 'user'});
-        publication.text = text;
-        publication.autorId = user.id;
+        let imageUrl = "";
         if (req.file) {
-            publication.imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+            imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         };
-        await Publication.update({ ...publication }, { where: { uuid } })
-        return res.status(201).json({ message: 'Publication modifiée'});
-    } catch(err) {
-        console.log(err);
-        return res.status(500).json({ error: 'Impossible de modifier la publication'});
+        const query = `UPDATE publications [text = ?, autorId = ?, imageUrl = ?];`
+        const result = await sql.query(query, [text, autorId, imageUrl]);
+
+        if (result[0].affectedRows === 1) {
+            return res.status(200).json({ message: "publication modified" });
+        } else if (result[0].affectedRows === 0) {
+            throw(error);
+        };
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({ message: 'Impossible de modifier la publication'});
     };
 };
 
 exports.deletePublication = async (req, res) => {
-    const uuid = req.params.uuid;
+    const pubId = req.params.pubId;
     try {
-        const publication = await Publication.findOne({ where: { uuid }});
+        const query = "DELETE FROM publications WHERE id = ?;"
+        const result = await sql.query(query, pubId);
+
+        if (result[0].affectedRows === 1) {
+            return res.status(200).json({ message: "publication deleted" });
+        } else if (result[0].affectedRows === 0) {
+            throw(error);
+        };
+
         /*const filename = publication.imageUrl.split('/images/')[1];
         fs.unlink(`images/${filename}`);*/
-        await Publication.destroy({ where: { uuid } })
-        return res.status(200).json({ message: 'Publication supprimée'});
     } catch(err) {
         console.log(err);
         return res.status(500).json({ error: "Could not delete publication"});

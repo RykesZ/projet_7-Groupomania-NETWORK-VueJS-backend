@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/auth', userRoutes);
-//app.use('/api/publications', publicationRoutes);
+app.use('/api/publications', publicationRoutes);
 //app.use('/api/comments', commentRoutes);
 
 // set port, listen for requests

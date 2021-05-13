@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
 const sql = require('../models/db');
 
 exports.signup = async (req, res) => {
@@ -21,7 +20,7 @@ exports.signup = async (req, res) => {
                 return res.status(201).json({ message: "user added" });
             } else if (result[0].affectedRows === 0) {
                 throw(error);
-            }
+            };
             
         } catch(error) {
             console.log(error);
