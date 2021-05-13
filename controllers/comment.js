@@ -51,4 +51,12 @@ exports.getAllComments = async (req, res) => {
         console.log(err);
         return res.status(500).json({ error: 'Could not find comment'});
     }
-}
+};
+
+exports.modifyComment = async (req, res) => {
+
+};
+
+exports.deleteComment = async (req, res) => {
+
+};
