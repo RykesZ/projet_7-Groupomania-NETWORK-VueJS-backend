@@ -12,7 +12,7 @@ exports.signup = async (req, res) => {
     try {
         let hash = await bcrypt.hash(password, 10);
         try {
-            const query = `INSERT INTO users (firstname, lastname, email, password, birthdate, gender, imageUrl, publicationsCreated, publicationsLiked, publicationsMasked, commentsCreated) VALUES (?, ?, ?, ?, ?, ?, "http://localhost:5000/images/PP_default.png", "", "", "", "");`
+            const query = `INSERT INTO users (firstname, lastname, email, password, birthdate, gender, imageUrl, publicationsCreated, publicationsLiked, publicationsMasked, commentsCreated, deleted) VALUES (?, ?, ?, ?, ?, ?, "http://localhost:5000/images/PP_default.png", "", "", "", "", 0);`
             const result = await sql.query(query, [firstname, lastname, email, hash, birthdate, gender]);
             /*console.log(result);
             console.log(result[0].affectedRows);*/
@@ -74,7 +74,7 @@ exports.getUserInfo = async (req, res) => {
     }
     const userId = req.body.userId;
     try {
-        const query = "SELECT firstname, lastname, birthdate, gender FROM users WHERE id = ? ;"
+        const query = "SELECT firstname, lastname, birthdate, gender, imageUrl FROM users WHERE id = ? ;"
         const result = await sql.query(query, userId)
 
         /*console.log(result);
@@ -115,16 +115,42 @@ exports.modifyUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     const userId = req.body.userId;
-    try {
-        const query = "DELETE FROM users WHERE id = ? ;"
-        const result = await sql.query(query, userId)
-        if (result[0].affectedRows == 0) {
-            console.log(result[0].affectedRows);
-            return res.status(500).json("user not found");
+    const deletePubAndComms = req.body.deletePubAndComms;
+
+    if (deletePubAndComms === false) {
+        try {
+            const query = `UPDATE users SET firstname = "Utilisateur", lastname = "supprimé", email = "", password = "", birthdate = 0000-00-00,imageUrl = "http://localhost:5000/images/PP_default.png", deleted = TRUE WHERE id = ? ;`
+            const result = await sql.query(query, userId)
+            if (result[0].affectedRows == 0) {
+                console.log(result[0].affectedRows);
+                return res.status(500).json("user not found");
+            }
+            return res.status(200).json({ message: "user deleted" })
+        } catch(error) {
+            return res.status(500).json({ error })
+        };
+    } else if (deletePubAndComms === true) {
+        try {
+            const query = `DELETE FROM users WHERE id = ? ;`
+            const result = await sql.query(query, userId)
+            if (result[0].affectedRows == 0) {
+                console.log(result[0].affectedRows);
+                return res.status(500).json("user not found");
+            };
+            try {
+                const query2 = `DELETE FROM publications WHERE autorId = ? ;`
+                const result2 = await sql.query(query2, userId);
+            } finally {
+                try {
+                    const query3 = `DELETE FROM comments WHERE autorId = ? ;`
+                    const result3 = await sql.query(query3, userId);
+                } finally {
+                    return res.status(200).json({ message: "user deleted" })
+                };
+            }
+        } catch(error) {
+            return res.status(500).json({ error })
         }
-        return res.status(200).json({ message: "user deleted" })
-    } catch(err) {
-        return res.status(500).json({ err })
     };
 };
 

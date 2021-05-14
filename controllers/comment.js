@@ -43,7 +43,7 @@ exports.createComment = async (req, res) => {
 exports.getAllComments = async (req, res) => {
     const pubOriginId = req.params.pubId;
     try {
-        const query = `SELECT * FROM comments WHERE pubOriginId = ? ORDER BY date_insertion ASC;`
+        const query = `SELECT c.id AS commId, c.text, c.autorId, c.date_insertion, c.date_modification, u.firstname, u.lastname, u.imageUrl FROM comments AS c INNER JOIN users AS u ON c.autorId = u.id WHERE c.pubOriginId = ? ORDER BY date_insertion ASC;`
         const result = await sql.query(query, pubOriginId);
         const response = result[0];
         console.log(response);

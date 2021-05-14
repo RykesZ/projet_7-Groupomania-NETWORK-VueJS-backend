@@ -28,9 +28,9 @@ exports.getAllPublications = async (req, res) => {
     const pageNumber = req.body.pageNumber;
     const offset = (pageNumber - 1) * 10;
     try {
-        const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id ORDER BY date_insertion DESC LIMIT 10 OFFSET ?;"
+        const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
         const result = await sql.query(query, offset);
-        const response = result[0][0];
+        const response = result[0];
         if (result.length === 0) {
             return res.status(500).json({message: "no publications to display"});
         };
@@ -44,7 +44,7 @@ exports.getAllPublications = async (req, res) => {
 exports.getOnePublication = async (req, res) => {
     const pubId = req.params.pubId;
     try {
-        const query = "SELECT * FROM publications WHERE id = ?;"
+        const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE p.id = ? AND u.deleted = FALSE;"
         const result = await sql.query(query, pubId);
         const response = result[0][0];
         if (result.length === 0) {
@@ -103,6 +103,8 @@ exports.deletePublication = async (req, res) => {
         const result2 = await sql.query(query2, pubId);
 
         if (result2[0].affectedRows === 1) {
+            const query3 = "DELETE FROM comments WHERE pubOriginId = ?;"
+            const result3 = await sql.query(query3, pubId);
             return res.status(200).json({ message: "publication deleted" });
         } else if (result[0].affectedRows === 0) {
             throw(error);
