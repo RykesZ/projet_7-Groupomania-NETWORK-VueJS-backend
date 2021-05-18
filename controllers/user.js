@@ -10,6 +10,7 @@ exports.signup = async (req, res) => {
     }
     const { firstname, lastname, email, password, birthdate, gender } = req.body;
     try {
+        console.log(password);
         let hash = await bcrypt.hash(password, 10);
         try {
             const query = `INSERT INTO users (firstname, lastname, email, password, birthdate, gender, imageUrl, publicationsCreated, publicationsLiked, publicationsMasked, commentsCreated, deleted) VALUES (?, ?, ?, ?, ?, ?, "http://localhost:5000/images/PP_default.png", "", "", "", "", 0);`
