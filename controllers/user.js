@@ -74,6 +74,7 @@ exports.getUserInfo = async (req, res) => {
         });
     }
     const userId = req.body.userId;
+    console.log(userId);
     try {
         const query = "SELECT firstname, lastname, birthdate, gender, imageUrl FROM users WHERE id = ? ;"
         const result = await sql.query(query, userId)
