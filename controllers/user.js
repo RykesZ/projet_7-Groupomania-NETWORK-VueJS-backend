@@ -68,16 +68,17 @@ exports.login = async (req, res) => {
 };
 
 exports.getUserInfo = async (req, res) => {
-    if (!req.body) {
+    if (!req.query) {
         return res.status(400).json({
           message: "Demand can not be empty!"
         });
     }
-    const userId = req.body.userId;
+    const userId = Number(req.query.userId);
     console.log(userId);
     try {
         const query = "SELECT firstname, lastname, email, birthdate, gender, imageUrl FROM users WHERE id = ? ;"
         const result = await sql.query(query, userId)
+        console.log(result);
 
         /*console.log(result);
         console.log(result[0]);
@@ -89,14 +90,16 @@ exports.getUserInfo = async (req, res) => {
         if (result.length === 0) {
             return res.status(500).json({message: "user not found"});
         };
-        return res.status(201).json({ response });
+        console.log(response)
+        return res.status(200).json({ response });
     } catch(err) {
         return res.status(500).json({message: "user not found"})
     };
 };
 
 exports.modifyUser = async (req, res) => {
-    const { userId, firstname, lastname, email, password, birthdate, gender, imageUrl } = req.body;
+    const { userId, firstname, lastname, email, password, birthdate, gender } = req.body;
+    const imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     try {
         let hash = null;
         if (password) {
@@ -116,28 +119,28 @@ exports.modifyUser = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-    const userId = req.body.userId;
-    const deletePubAndComms = req.body.deletePubAndComms;
+    const userId = req.query.userId;
+    const deletePubAndComms = req.query.deletePubAndComms;
 
-    if (deletePubAndComms === false) {
+    if (deletePubAndComms !== "on") {
         try {
             const query = `UPDATE users SET firstname = "Utilisateur", lastname = "supprimé", email = "", password = "", birthdate = 0000-00-00,imageUrl = "http://localhost:5000/images/PP_default.png", deleted = TRUE WHERE id = ? ;`
             const result = await sql.query(query, userId)
             if (result[0].affectedRows == 0) {
                 console.log(result[0].affectedRows);
-                return res.status(500).json("user not found");
+                return res.status(500).json({ message: "user not found" });
             }
             return res.status(200).json({ message: "user deleted" })
         } catch(error) {
             return res.status(500).json({ error })
         };
-    } else if (deletePubAndComms === true) {
+    } else if (deletePubAndComms === "on") {
         try {
             const query = `DELETE FROM users WHERE id = ? ;`
             const result = await sql.query(query, userId)
             if (result[0].affectedRows == 0) {
                 console.log(result[0].affectedRows);
-                return res.status(500).json("user not found");
+                return res.status(500).json({ message: "user not found" });
             };
             try {
                 const query2 = `DELETE FROM publications WHERE autorId = ? ;`
@@ -150,8 +153,8 @@ exports.deleteUser = async (req, res) => {
                     return res.status(200).json({ message: "user deleted" })
                 };
             }
-        } catch(error) {
-            return res.status(500).json({ error })
+        } catch {
+            return res.status(500).json({ message: "DB error" })
         }
     };
 };

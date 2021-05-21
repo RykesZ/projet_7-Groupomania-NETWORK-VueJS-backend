@@ -1,5 +1,7 @@
 require('dotenv').config()
 const express = require("express");
+const multer = require ('multer');
+const upload = multer();
 const path = require('path');
 
 
@@ -12,6 +14,10 @@ const app = express();
 
 // parse requests of content-type: application/json
 app.use(express.json());
+
+// for parsing multipart/form-data
+app.use(upload.array()); 
+app.use(express.static('public'));
 
 // parse requests of content-type: application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
