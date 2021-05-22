@@ -9,19 +9,29 @@ module.exports = (req, res, next) => {
     Puis cherche le user associé à ce token*/
     //console.log(req.headers.authorization);
     //const token = req.headers.authorization.split(' ')[1];
-    const token = req.query.token;
+    let token = null;
+    let userId = null;
+    //if (req.method == "GET") {
+      token = req.query.token;
+      userId = Number(req.query.userId);
+      console.log("this");
+    /*} else {
+      token = req.body.params.token;
+      userId = req.body.params.userId;
+      console.log("that")
+    }*/
     console.log(token);
+    console.log(userId);
     const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
     const tokenId = decodedToken.userId;
     //console.log(req.body);
-    const userId = Number(req.query.userId);
-    console.log(userId);
     /* Compare le userId associé à ce token et celui fourni par la requête. Si les deux sont identiques, 
     permet l'accès à la fonction suivante de la route, sinon renvoie une erreur */
     if (userId && userId !== tokenId) {
       throw 'Invalid user ID';
     } else if (userId && userId === tokenId) {
       //res.locals.tokenId = tokenId;
+      console.log("auth passé");
       next();
     } else {
       throw 'An error occured'

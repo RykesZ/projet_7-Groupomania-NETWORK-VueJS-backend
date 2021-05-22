@@ -34,7 +34,7 @@ exports.signup = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body.data;
     try {
         const query = "SELECT id, password FROM users WHERE email = ? ;"
         const rows = await (sql.query(query, email))
@@ -78,7 +78,7 @@ exports.getUserInfo = async (req, res) => {
     try {
         const query = "SELECT firstname, lastname, email, birthdate, gender, imageUrl FROM users WHERE id = ? ;"
         const result = await sql.query(query, userId)
-        console.log(result);
+        //console.log(result);
 
         /*console.log(result);
         console.log(result[0]);
@@ -98,8 +98,13 @@ exports.getUserInfo = async (req, res) => {
 };
 
 exports.modifyUser = async (req, res) => {
-    const { userId, firstname, lastname, email, password, birthdate, gender } = req.body;
-    const imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    console.log(req.body);
+    // A adapter au formData : https://developer.mozilla.org/fr/docs/Web/API/FormData/get
+    const { userId, firstname, lastname, email, password, birthdate, gender } = req.formData;
+    let imageUrl = null;
+    if (req.file) {
+        imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    }
     try {
         let hash = null;
         if (password) {
@@ -107,8 +112,8 @@ exports.modifyUser = async (req, res) => {
         }
         const query = "UPDATE users SET firstname = ?, lastname = ?, email = ?, password = ?, birthdate = ?, gender = ?, imageUrl = ? WHERE id = ?;"
         const result = await sql.query(query, [firstname, lastname, email, hash, birthdate, gender, imageUrl, userId]);
+        console.log(result);
         if (result[0].affectedRows == 0) {
-            console.log(result);
             return res.status(500).json("user not found");
         }
         return res.status(200).json({ message: "user updated" })
