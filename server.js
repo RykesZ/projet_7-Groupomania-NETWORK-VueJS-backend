@@ -1,9 +1,10 @@
 require('dotenv').config()
 const express = require("express");
+const bodyParser = require('body-parser');
 const multer = require ('multer');
 const upload = multer();
 const path = require('path');
-
+const formidable = require('express-formidable');
 
 const userRoutes = require('./routes/user');
 const publicationRoutes = require('./routes/publication');
@@ -11,21 +12,18 @@ const commentRoutes = require('./routes/comment');
 
 const app = express();
 
+// parse everything
+//app.use(formidable());
 
 // parse requests of content-type: application/json
-app.use(express.json());
+//app.use(express.json());
 
 // for parsing multipart/form-data
-app.use(upload.array()); 
-app.use(express.static('public'));
+//app.use(upload.array()); 
+//app.use(express.static('public'));
 
 // parse requests of content-type: application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
-
-// simple route
-/*app.get("/", (req, res) => {
-  res.json({ message: "Welcome to bezkoder application." });
-});*/
+//app.use(express.urlencoded({ extended: true }));
 
 // Définition des headers autorisés pour les requêtes entrantes
 app.use((req, res, next) => {
@@ -34,6 +32,9 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   next();
 });
+
+// Incroyable : sans ce truc obsolète, les req.files ne sont pas reconnus
+app.use(bodyParser.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/auth', userRoutes);

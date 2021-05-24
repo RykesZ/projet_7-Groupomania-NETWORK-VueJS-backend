@@ -20,8 +20,8 @@ module.exports = (req, res, next) => {
       userId = req.body.params.userId;
       console.log("that")
     }*/
-    console.log(token);
-    console.log(userId);
+    //console.log(token);
+    //console.log(userId);
     const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
     const tokenId = decodedToken.userId;
     //console.log(req.body);
