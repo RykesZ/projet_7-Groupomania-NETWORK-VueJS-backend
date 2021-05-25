@@ -15,11 +15,12 @@ const storage = multer.diskStorage({
     callback(null, 'images');
   },
   filename: (req, file, callback) => {
-    const userId = req.query.userId;
-    const name = `profilePictureOfUser${userId}`;
-    //file.originalname.split(' ').join('_').split('.')[0];
+    const userId = req.body.userId;
+    console.log(userId);
+    const name = //`profilePictureOfUser${userId}`;
+    file.originalname.split(' ').join('_').split('.')[0];
     const extension = MIME_TYPES[file.mimetype];
-    callback(null, name /*+ Date.now()*/ + '.' + extension);
+    callback(null, name + Date.now() + '.' + extension);
   }
 });
 

@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sql = require('../models/db');
 const fs = require('fs');
+const fsPromises = fs.promises;
 
 exports.signup = async (req, res) => {
     if (!req.body) {
@@ -101,6 +102,7 @@ exports.getUserInfo = async (req, res) => {
 exports.modifyUser = async (req, res) => {
     try {
         let fields = req.body;
+        let filename = null;
         for (let field in fields) {
             if (fields[field] === "null") {
                 fields[field] = null;
@@ -108,37 +110,62 @@ exports.modifyUser = async (req, res) => {
         }
         const { userId, firstname, lastname, email, password, birthdate, gender } = fields;
         let imageUrl = null;
-        // Supprime l'ancienne image de profil pour la remplacer par la nouvelle contenue dans la requête si elle est présente
-        if (req.file) {
-            try {
-                const query2 = "SELECT imageUrl FROM users WHERE id = ?;"
-                const resultUrl = await sql.query(query2, [userId]);
-                const filename = resultUrl[0][0].imageUrl.split('/images/')[1];
-                console.log({"l117": filename});
-                fs.unlink(`images/${filename}`, () => {
-                    imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
-                    console.log({"l120": imageUrl});
-                });
-            } catch (error) {
-                console.log(error);
-            }
-        }
+        // Obtient le filename de l'image de profil actuelle
         try {
-            let hash = null;
-            if (password) {
-                hash = await bcrypt.hash(password, 10);
-            }
-            console.log({"l131": imageUrl});
-            const query = "UPDATE users SET firstname = ?, lastname = ?, email = ?, password = ?, birthdate = ?, gender = ?, imageUrl = ? WHERE id = ?;"
-            const result = await sql.query(query, [firstname, lastname, email, hash, birthdate, gender, imageUrl, userId]);
-            if (result[0].affectedRows == 0) {
-                return res.status(500).json("user not found");
-            }
-            return res.status(200).json({ message: "user updated" })
-        } catch(err) {
-            console.log(err);
-            return res.status(500).json({ err });
+            const query2 = "SELECT imageUrl FROM users WHERE id = ?;"
+            const resultUrl = await sql.query(query2, [userId]);
+            filename = resultUrl[0][0].imageUrl.split('/images/')[1];
+            console.log({"l120": filename});
+        } catch {
+            console.log("unable to get filename");
         }
+
+        // Si un fichier d'image de profil est présent, construit la nouvelle URL à insérer dans les infos du user
+        const newImageUrl = async () => {
+            if (req.file) {
+                try {
+                    return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+                } catch (error) {
+                    console.log(error);
+                }
+            } else {
+                return null;
+            }
+        }
+
+
+        // Fonction qui met à jour les infos du user
+        const updateUserInfos = async () => {
+            try {
+                imageUrl = await newImageUrl();
+                let hash = null;
+                if (password) {
+                    hash = await bcrypt.hash(password, 10);
+                }
+                console.log({"l150": imageUrl});
+                const query = "UPDATE users SET firstname = ?, lastname = ?, email = ?, password = ?, birthdate = ?, gender = ?, imageUrl = ? WHERE id = ?;"
+                const result = await sql.query(query, [firstname, lastname, email, hash, birthdate, gender, imageUrl, userId]);
+                if (result[0].affectedRows == 0) {
+                    return res.status(500).json("user not found");
+                }
+                // Si la précédente image de profil n'était pas celle par défaut, la supprime du stockage en la repérant au filename obtenu plsu tôt
+                if (filename != "PP_default.png") {
+                    try {
+                        fs.unlink(`images/${filename}`, () => {
+                        });
+                    } catch (error) {
+                        console.log({error: "l128 error"});
+                    }
+                }
+                // Renvoie enfin la réponse à la requête
+                return res.status(200).json({ message: "user updated" })
+            } catch(err) {
+                console.log(err);
+                return res.status(500).json({ err });
+            }
+        };
+        updateUserInfos();
+        
     } catch(err) {
         return res.status(400).json({ message : "Bad request error"});
     }
