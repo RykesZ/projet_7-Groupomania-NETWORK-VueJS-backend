@@ -25,7 +25,7 @@ exports.createPublication = async (req, res) => {
 };
 
 exports.getAllPublications = async (req, res) => {
-    const pageNumber = req.body.pageNumber;
+    const pageNumber = req.query.pageNumber;
     const offset = (pageNumber - 1) * 10;
     try {
         const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
@@ -34,7 +34,7 @@ exports.getAllPublications = async (req, res) => {
         if (result.length === 0) {
             return res.status(500).json({message: "no publications to display"});
         };
-        return res.status(201).json({ response });
+        return res.status(200).json({ response });
     } catch(error) {
         console.log(error);
         return res.status(500).json({ msg: "Could not get publications" });

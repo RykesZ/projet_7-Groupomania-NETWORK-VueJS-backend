@@ -1,0 +1,33 @@
+CREATE TABLE publications (
+id MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT,
+text TEXT NOT NULL,
+autorId SMALLINT UNSIGNED NOT NULL,
+imageUrl VARCHAR(255) NOT NULL,
+usersLiked TEXT,
+likes SMALLINT NOT NULL,
+comments TEXT,
+date_insertion DATETIME,
+date_modification DATETIME,
+PRIMARY KEY (id),
+UNIQUE (id)
+)
+ENGINE=INNODB;
+
+DELIMITER |
+CREATE TRIGGER before_insert_publications BEFORE INSERT
+ON publications FOR EACH ROW
+BEGIN
+SET NEW.date_insertion = NOW();
+SET NEW.date_modification = NOW();
+END |
+
+CREATE TRIGGER before_update_publications BEFORE UPDATE
+ON publications FOR EACH ROW
+BEGIN
+SET NEW.date_modification = NOW();
+IF NEW.imageUrl IS NULL
+		THEN
+			SET NEW.imageUrl = OLD.imageUrl;
+	END IF;
+END |
+DELIMITER;

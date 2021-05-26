@@ -10,7 +10,7 @@ exports.signup = async (req, res) => {
           message: "Content can not be empty!"
         });
     }
-    const { firstname, lastname, email, password, birthdate, gender } = req.body;
+    const { firstname, lastname, email, password, birthdate, gender } = req.body.data;
     try {
         console.log(password);
         let hash = await bcrypt.hash(password, 10);
@@ -65,7 +65,7 @@ exports.login = async (req, res) => {
         };     
     } catch(err) {
         console.log(err)
-        return res.status(500).json({ err });
+        return res.status(500).json({ error: "Utilisateur inconnu" });
     };
 };
 
@@ -102,7 +102,6 @@ exports.getUserInfo = async (req, res) => {
 exports.modifyUser = async (req, res) => {
     try {
         let fields = req.body;
-        let filename = null;
         for (let field in fields) {
             if (fields[field] === "null") {
                 fields[field] = null;
@@ -111,14 +110,18 @@ exports.modifyUser = async (req, res) => {
         const { userId, firstname, lastname, email, password, birthdate, gender } = fields;
         let imageUrl = null;
         // Obtient le filename de l'image de profil actuelle
-        try {
-            const query2 = "SELECT imageUrl FROM users WHERE id = ?;"
-            const resultUrl = await sql.query(query2, [userId]);
-            filename = resultUrl[0][0].imageUrl.split('/images/')[1];
-            console.log({"l120": filename});
-        } catch {
-            console.log("unable to get filename");
+        const getFileName = async () => {
+            try {
+                const query2 = "SELECT imageUrl FROM users WHERE id = ?;"
+                const resultUrl = await sql.query(query2, [userId]);
+                return resultUrl[0][0].imageUrl.split('/images/')[1];
+                console.log({"l120": filename});
+            } catch {
+                console.log("unable to get filename");
+            }
         }
+        let filename = await getFileName();
+        
 
         // Si un fichier d'image de profil est présent, construit la nouvelle URL à insérer dans les infos du user
         const newImageUrl = async () => {
@@ -138,6 +141,7 @@ exports.modifyUser = async (req, res) => {
         const updateUserInfos = async () => {
             try {
                 imageUrl = await newImageUrl();
+                console.log({"l144": imageUrl});
                 let hash = null;
                 if (password) {
                     hash = await bcrypt.hash(password, 10);
@@ -148,15 +152,19 @@ exports.modifyUser = async (req, res) => {
                 if (result[0].affectedRows == 0) {
                     return res.status(500).json("user not found");
                 }
-                // Si la précédente image de profil n'était pas celle par défaut, la supprime du stockage en la repérant au filename obtenu plsu tôt
-                if (filename != "PP_default.png") {
-                    try {
-                        fs.unlink(`images/${filename}`, () => {
-                        });
-                    } catch (error) {
-                        console.log({error: "l128 error"});
+                // Si la précédente image de profil n'était pas celle par défaut, la supprime du stockage en la repérant au filename obtenu plus tôt
+                const deleteOldImage = () => {
+                    if (filename != "PP_default.png" && imageUrl != null) {
+                        try {
+                            fs.unlink(`images/${filename}`, () => {
+                            });
+                        } catch (error) {
+                            console.log({error: "l128 error"});
+                        }
                     }
                 }
+                deleteOldImage();
+
                 // Renvoie enfin la réponse à la requête
                 return res.status(200).json({ message: "user updated" })
             } catch(err) {
@@ -173,8 +181,32 @@ exports.modifyUser = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-    const userId = req.query.userId;
+    const userId = Number(req.query.userId);
     const deletePubAndComms = req.query.deletePubAndComms;
+    const getFileName = async () => {
+        try {
+            const query2 = "SELECT imageUrl FROM users WHERE id = ?;"
+            const resultUrl = await sql.query(query2, [userId]);
+            return resultUrl[0][0].imageUrl.split('/images/')[1];
+        } catch {
+            console.log("unable to get filename");
+        }
+    }
+    let filename = await getFileName();
+
+    const deleteOldImage = () => {
+        if (filename != "PP_default.png") {
+            try {
+                fs.unlink(`images/${filename}`, () => {
+                });
+            } catch (error) {
+                console.log({error: "unable to delete old image"});
+            }
+        }
+    }
+    deleteOldImage();
+
+
 
     if (deletePubAndComms !== "on") {
         try {
