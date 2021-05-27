@@ -5,14 +5,24 @@ const multer = require('multer');
 const MIME_TYPES = {
   'image/jpg': 'jpg',
   'image/jpeg': 'jpg',
-  'image/png': 'png'
+  'image/png': 'png',
+  'video/mp4': 'mp4',
+  'video/m4v': 'm4v'
 };
+
 
 /* Indique dans quel répertoire il faudra stocker les fichiers sur le disque local 
 et redéfinit le format du nom sous lequel les fichiers seront enregistrés */
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
-    callback(null, 'images');
+    console.log(file.mimetype)
+    if (file.mimetype == 'image/jpg' || file.mimetype == 'image/jpeg' || file.mimetype == 'image/png' ) {
+      callback(null, 'images');
+    } else if (file.mimetype == 'video/mp4' || file.mimetype == 'video/m4v') {
+      callback(null, 'videos');
+    }
+
+    
   },
   filename: (req, file, callback) => {
     const userId = req.body.userId;

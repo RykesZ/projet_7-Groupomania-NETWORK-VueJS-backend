@@ -7,9 +7,24 @@ exports.createPublication = async (req, res) => {
     const autorId = req.body.userId;
     try {
         let imageUrl = "";
-        if (req.file) {
-            imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-        };
+        // Si un media de publication est présent, construit la nouvelle URL à insérer dans les infos de la publication
+        const newImageUrl = async () => {
+            if (req.file) {
+                try {
+                    const type = req.file.filename.split('.')[1];
+                    if (type == 'jpg' || type == 'png') {
+                        return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+                    } else if (type == 'mp4' || type == 'm4v') {
+                        return `${req.protocol}://${req.get('host')}/videos/${req.file.filename}`;
+                    }
+                } catch (error) {
+                    console.log(error);
+                }
+            } else {
+                return null;
+            }
+        }
+        imageUrl = await newImageUrl();
         const query = `INSERT INTO publications (text, autorId, imageUrl, likes) VALUES (?, ?, ?, 0);`
         const result = await sql.query(query, [text, autorId, imageUrl]);
 
@@ -80,7 +95,7 @@ exports.modifyPublication = async (req, res) => {
 };
 
 exports.deletePublication = async (req, res) => {
-    const pubId = req.params.pubId;
+    const pubId = req.query.pubId;
     try {
         const query1 = "SELECT * FROM publications WHERE id = ?;"
         const result = await sql.query(query1, pubId);
@@ -92,12 +107,21 @@ exports.deletePublication = async (req, res) => {
                 fs.unlink(`images/${filename}`, (error) => {
                     if (error) {
                         throw(error);
-                    }
-                });
-            } catch(error) {
-                console.log(error);
-                return res.status(500).json({ message: "Could not delete file attached to publication"});
-            };
+                }
+            });
+            } catch {
+                try {
+                    const filename = await response.imageUrl.split('/videos/')[1];
+                    fs.unlink(`videos/${filename}`, (error) => {
+                        if (error) {
+                            throw(error);
+                        }
+                    });
+                } catch (error) {
+                    console.log(error);
+                    return res.status(500).json({ message: "Could not delete file attached to publication"});
+                } 
+            }
         }
         const query2 = "DELETE FROM publications WHERE id = ?;"
         const result2 = await sql.query(query2, pubId);
