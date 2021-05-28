@@ -109,19 +109,10 @@ exports.deletePublication = async (req, res) => {
                         throw(error);
                 }
             });
-            } catch {
-                try {
-                    const filename = await response.imageUrl.split('/videos/')[1];
-                    fs.unlink(`videos/${filename}`, (error) => {
-                        if (error) {
-                            throw(error);
-                        }
-                    });
-                } catch (error) {
-                    console.log(error);
-                    return res.status(500).json({ message: "Could not delete file attached to publication"});
-                } 
-            }
+            } catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: "Could not delete file attached to publication"});
+            } 
         }
         const query2 = "DELETE FROM publications WHERE id = ?;"
         const result2 = await sql.query(query2, pubId);
@@ -142,21 +133,26 @@ exports.deletePublication = async (req, res) => {
 // Besoin de : pubId (id de la publication) en paramètre d'URL, like(int de valeur 0 ou 1), userId(id de l'utilisateur ayant liké/disliké)
 exports.likePublication = async (req, res) => {
     const pubId = req.params.pubId;
-    const userId = req.body.userId;
-    const like = req.body.like;
-    console.log(pubId);
+    const userId = req.query.userId;
+    const like = req.params.like;
+    console.log({"pubId": pubId});
+    console.log({"like": like});
 
     try {
         const querySelect = "SELECT usersLiked FROM publications WHERE id = ?;"
         const result = await sql.query(querySelect, pubId);
         const response = result[0][0];
-        console.log(response);
+        console.log({"response": response});
         if (result.length === 0) {
             return res.status(500).json({message: "this publication does not exist"});
         };
         let usersLiked = [];
         if (response.usersLiked != null) {
             usersLiked = response.usersLiked.split(',');
+            // Permet de nettoyer l'array des valeurs vides
+            if (usersLiked[0] == '') {
+                usersLiked.shift();
+            }
         }
         console.log(usersLiked);
         // En fonction de la valeur de "like" dans le corps de la requête, donne différents résultats
@@ -166,7 +162,7 @@ exports.likePublication = async (req, res) => {
             fonction de la longueur de l'array usersLiked, et met à jour la publication dans la base de données
             avec les infos de la publication modifiée, avant d'envoyer une réponse de status 201 au frontend 
             Si le user est déjà dans usersLiked, envoie un message d'erreur et un status code */
-            case 1:
+            case '1':
                 if (usersLiked.indexOf(userId) === -1) {
                     try {
                         usersLiked.push(userId);
@@ -174,6 +170,9 @@ exports.likePublication = async (req, res) => {
                         const usersLikedToUpdate = usersLiked.join(',');
                         console.log(usersLikedToUpdate);
                         const query1 = `UPDATE publications SET usersLiked = ?, likes = ? WHERE id = ?;`
+                        console.log({"usersLikedToUpdate": usersLikedToUpdate});
+                        console.log({"usersLiked.length": usersLiked.length});
+                        console.log({"pubId": pubId});
                         const result1 = await sql.query(query1, [usersLikedToUpdate, usersLiked.length, pubId]);
                         if (result1[0].affectedRows === 1) {
                             return res.status(201).json({ message: "publication liked" });
@@ -193,12 +192,15 @@ exports.likePublication = async (req, res) => {
             fonction de la longueur de l'array usersLiked, et met à jour la publication dans la base de données
             avec les infos de la publication modifiée, avant d'envoyer une réponse de status 201 au frontend 
             Si le user n'est pas l'array, envoie un message d'erreur et un status code */
-            case 0:
+            case '0':
                 if (usersLiked.indexOf(userId) !== -1) {
                     try {
-                        usersLiked.splice(userId, 1);
+                        usersLiked.splice(usersLiked.indexOf(userId), 1);
                         const usersLikedToUpdate = usersLiked.join(',');
                         const query0 = `UPDATE publications SET usersLiked = ?, likes = ? WHERE id = ?;`
+                        console.log({"usersLikedToUpdate": usersLikedToUpdate});
+                        console.log({"usersLiked.length": usersLiked.length});
+                        console.log({"pubId": pubId});
                         const result0 = await sql.query(query0, [usersLikedToUpdate, usersLiked.length, pubId]);
                         if (result0[0].affectedRows === 1) {
                             return res.status(201).json({ message: "publication unliked" });
