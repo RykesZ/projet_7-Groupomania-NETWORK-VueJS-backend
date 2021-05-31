@@ -21,7 +21,7 @@ exports.createPublication = async (req, res) => {
                     console.log(error);
                 }
             } else {
-                return null;
+                return '';
             }
         }
         imageUrl = await newImageUrl();
@@ -96,6 +96,7 @@ exports.modifyPublication = async (req, res) => {
 
 exports.deletePublication = async (req, res) => {
     const pubId = req.query.pubId;
+    console.log({"pubId": pubId});
     try {
         const query1 = "SELECT * FROM publications WHERE id = ?;"
         const result = await sql.query(query1, pubId);
