@@ -14,16 +14,16 @@ exports.createPublication = async (req, res) => {
                     const type = req.file.filename.split('.')[1];
                     if (type == 'jpg' || type == 'png') {
                         return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
-                    } else if (type == 'mp4' || type == 'm4v') {
+                    } /*else if (type == 'mp4' || type == 'm4v') {
                         return `${req.protocol}://${req.get('host')}/videos/${req.file.filename}`;
-                    }
+                    }*/
                 } catch (error) {
                     console.log(error);
                 }
             } else {
                 return '';
-            }
-        }
+            };
+        };
         imageUrl = await newImageUrl();
         const query = `INSERT INTO publications (text, autorId, imageUrl, likes) VALUES (?, ?, ?, 0);`
         const result = await sql.query(query, [text, autorId, imageUrl]);
@@ -65,7 +65,7 @@ exports.getOnePublication = async (req, res) => {
         if (result.length === 0) {
             return res.status(500).json({message: "no publications to display"});
         };
-        return res.status(201).json({ response });
+        return res.status(200).json({ response });
     } catch(err) {
         console.log(err);
         return res.status(500).json({ error: "Could not get publications"});
@@ -74,12 +74,55 @@ exports.getOnePublication = async (req, res) => {
 
 exports.modifyPublication = async (req, res) => {
     const text = req.body.text;
-    const pubId = req.params.pubId;
+    const pubId = req.query.pubId;
+    const userId = Number(req.query.userId);
     try {
-        let imageUrl = "";
-        if (req.file) {
-            imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+        try {
+            const query1 = "SELECT * FROM publications WHERE id = ?;"
+            const result = await sql.query(query1, pubId);
+            const response = result[0][0];
+            console.log(response);
+            // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la modifier
+            if (response.autorId != userId) {
+                return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
+            }
+            if (req.file) {
+                if (response.imageUrl != '') {
+                    try {
+                        const filename = await response.imageUrl.split('/images/')[1];
+                        fs.unlink(`images/${filename}`, (error) => {
+                            if (error) {
+                                throw(error);
+                        }
+                    });
+                    } catch (error) {
+                        console.log(error);
+                        return res.status(500).json({ message: "Could not delete ancient file attached to publication" });
+                    } 
+                }
+            }
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ message: "Can't find publication"});
         };
+        let imageUrl = "";
+        const newImageUrl = async () => {
+            if (req.file) {
+                try {
+                    const type = req.file.filename.split('.')[1];
+                    if (type == 'jpg' || type == 'png') {
+                        return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+                    } /*else if (type == 'mp4' || type == 'm4v') {
+                        return `${req.protocol}://${req.get('host')}/videos/${req.file.filename}`;
+                    }*/
+                } catch (error) {
+                    console.log(error);
+                }
+            } else {
+                return '';
+            };
+        };
+        imageUrl = await newImageUrl();
         const query = `UPDATE publications SET text = ?, imageUrl = ? WHERE id = ?;`
         const result = await sql.query(query, [text, imageUrl, pubId]);
 
@@ -96,12 +139,18 @@ exports.modifyPublication = async (req, res) => {
 
 exports.deletePublication = async (req, res) => {
     const pubId = req.query.pubId;
+    const userId = Number(req.query.userId);
     console.log({"pubId": pubId});
     try {
         const query1 = "SELECT * FROM publications WHERE id = ?;"
         const result = await sql.query(query1, pubId);
         const response = result[0][0];
         console.log(response);
+        // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la supprimer
+        if (response.autorId != userId) {
+            return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
+        }
+
         if (response.imageUrl != '') {
             try {
                 const filename = await response.imageUrl.split('/images/')[1];
@@ -112,7 +161,7 @@ exports.deletePublication = async (req, res) => {
             });
             } catch (error) {
                 console.log(error);
-                return res.status(500).json({ message: "Could not delete file attached to publication"});
+                return res.status(500).json({ message: "Could not delete file attached to publication" });
             } 
         }
         const query2 = "DELETE FROM publications WHERE id = ?;"
