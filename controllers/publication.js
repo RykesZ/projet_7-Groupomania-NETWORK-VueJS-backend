@@ -74,7 +74,9 @@ exports.getOnePublication = async (req, res) => {
 
 exports.modifyPublication = async (req, res) => {
     const text = req.body.text;
-    const pubId = req.query.pubId;
+    const pubId = req.params.pubId;
+    const removeFile = req.body.removeFile;
+    console.log(removeFile);
     const userId = Number(req.query.userId);
     try {
         try {
@@ -86,8 +88,9 @@ exports.modifyPublication = async (req, res) => {
             if (response.autorId != userId) {
                 return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
             }
-            if (req.file) {
-                if (response.imageUrl != '') {
+            // Supprime l'image actuelle de la publication
+            if (req.file || removeFile == 'true') {
+                if (response.imageUrl != '' || removeFile == 'true') {
                     try {
                         const filename = await response.imageUrl.split('/images/')[1];
                         fs.unlink(`images/${filename}`, (error) => {
@@ -118,8 +121,10 @@ exports.modifyPublication = async (req, res) => {
                 } catch (error) {
                     console.log(error);
                 }
-            } else {
+            } else if (removeFile == 'true') {
                 return '';
+            } else {
+                return null;
             };
         };
         imageUrl = await newImageUrl();

@@ -1,7 +1,13 @@
 const sql = require('../models/db');
 
 exports.createComment = async (req, res) => {
+    if (!req.body) {
+        return res.status(400).json({
+          message: "Content can not be empty!"
+        });
+    }
     // Récupère le texte du commentaire, ainsi que l'userId de son auteur, et l'id de la publciation à laquelle il apparatient
+    console.log(req);
     const text = req.body.text;
     const autorId = req.body.userId;
     const pubId = req.body.pubId;
