@@ -6,7 +6,7 @@ exports.createComment = async (req, res) => {
     const autorId = req.body.userId;
     const pubId = req.body.pubId;
     try {
-        const query = `INSERT INTO comments (text, autorId, pubOriginId) VALUES (?, ?, ?);`
+        const query = `INSERT INTO comments (text, autorId, pubOriginId) VALUES (?, ?, ?);`;
         const result = await sql.query(query, [text, autorId, pubId]);
         const response = result[0];
         console.log(response);
@@ -26,6 +26,19 @@ exports.createComment = async (req, res) => {
         } else if (result2[0].affectedRows === 0) {
             throw(error);
         };*/
+
+
+        const query2 = `SELECT COUNT(*) FROM comments where pubOriginId = ?;`;
+        const result2 = await sql.query(query2, [pubId]);
+        const response2 = result2[0][0];
+        console.log(response2);
+        const newCommCount = response2[Object.keys(response2)[0]];
+        console.log(newCommCount);
+
+        const query3 = `UPDATE publications SET comments = ? WHERE id = ?;`;
+        const result3 = await sql.query(query3, [newCommCount, pubId]);
+        const response3 = result3[0];
+        console.log(response3);
         
 
         if (result[0].affectedRows === 1) {
@@ -42,6 +55,7 @@ exports.createComment = async (req, res) => {
 // Envoie tous les commentaires d'une publication identifiée par son id
 exports.getAllComments = async (req, res) => {
     const pubOriginId = req.params.pubId;
+    console.log(pubOriginId);
     try {
         const query = `SELECT c.id AS commId, c.text, c.autorId, c.date_insertion, c.date_modification, u.firstname, u.lastname, u.imageUrl FROM comments AS c INNER JOIN users AS u ON c.autorId = u.id WHERE c.pubOriginId = ? ORDER BY date_insertion ASC;`
         const result = await sql.query(query, pubOriginId);
@@ -60,7 +74,7 @@ exports.getAllComments = async (req, res) => {
 
 exports.modifyComment = async (req, res) => {
     const text = req.body.text;
-    const commId = req.params.commId;
+    const commId = req.query.commId;
     console.log(commId);
     try {
         const query = `UPDATE comments SET text = ? WHERE id = ? ;`
@@ -78,7 +92,7 @@ exports.modifyComment = async (req, res) => {
 };
 
 exports.deleteComment = async (req, res) => {
-    const commId = req.params.commId;
+    const commId = req.query.commId;
     try {
         const query = "DELETE FROM comments WHERE id = ?;"
         const result = await sql.query(query, commId);

@@ -9,7 +9,7 @@ router.post('/', auth, multer, publicationCtrl.createPublication);
 router.get('/:pubId', auth, publicationCtrl.getOnePublication);
 router.get('/', auth, publicationCtrl.getAllPublications);
 router.put('/:pubId', auth, multer, publicationCtrl.modifyPublication);
-router.delete('/:pubId', auth, publicationCtrl.deletePublication);
+router.delete('/', auth, publicationCtrl.deletePublication);
 router.post('/:pubId/like/:like', auth, publicationCtrl.likePublication);
 
 module.exports = router;
