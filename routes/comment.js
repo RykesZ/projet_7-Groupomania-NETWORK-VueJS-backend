@@ -9,6 +9,6 @@ const multer = require('../middleware/multer-config');
 router.post('/', auth, multer, commentCtrl.createComment);
 router.get('/:pubId', auth, commentCtrl.getAllComments);
 router.put('/:commId', auth, multer, commentCtrl.modifyComment);
-router.delete('/:commId', auth, commentCtrl.deleteComment);
+router.delete('/', auth, commentCtrl.deleteComment);
 
 module.exports = router;

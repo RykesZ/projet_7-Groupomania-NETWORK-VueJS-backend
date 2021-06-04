@@ -99,7 +99,19 @@ exports.modifyComment = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
     const commId = req.query.commId;
+    const userId = Number(req.query.userId);
     try {
+
+        const query1 = "SELECT * FROM comments WHERE id = ?;"
+        const result1 = await sql.query(query1, commId);
+        const response = result1[0][0];
+        console.log(response);
+        // Permet de vérifier que le commentaire appartient bien à l'utilisateur qui tente de le supprimer
+        if (response.autorId != userId) {
+            return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
+        }
+
+
         const query = "DELETE FROM comments WHERE id = ?;"
         const result = await sql.query(query, commId);
 
