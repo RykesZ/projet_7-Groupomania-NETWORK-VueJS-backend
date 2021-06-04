@@ -6,7 +6,7 @@ exports.createComment = async (req, res) => {
           message: "Content can not be empty!"
         });
     }
-    // Récupère le texte du commentaire, ainsi que l'userId de son auteur, et l'id de la publciation à laquelle il apparatient
+    // Récupère le texte du commentaire, ainsi que l'userId de son auteur, et l'id de la publication à laquelle il apparatient
     console.log(req);
     const text = req.body.text;
     const autorId = req.body.userId;
@@ -99,7 +99,9 @@ exports.modifyComment = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
     const commId = req.query.commId;
+    console.log({"commId:": commId});
     const userId = Number(req.query.userId);
+    console.log({"userId:": userId});
     try {
 
         const query1 = "SELECT * FROM comments WHERE id = ?;"
@@ -110,10 +112,25 @@ exports.deleteComment = async (req, res) => {
         if (response.autorId != userId) {
             return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
         }
-
-
+        const pubId = response.pubOriginId;
+        
         const query = "DELETE FROM comments WHERE id = ?;"
         const result = await sql.query(query, commId);
+
+
+        const query2 = `SELECT COUNT(*) FROM comments where pubOriginId = ?;`;
+        const result2 = await sql.query(query2, [pubId]);
+        const response2 = result2[0][0];
+        console.log(response2);
+        const newCommCount = response2[Object.keys(response2)[0]];
+        console.log(newCommCount);
+
+        const query3 = `UPDATE publications SET comments = ? WHERE id = ?;`;
+        const result3 = await sql.query(query3, [newCommCount, pubId]);
+        const response3 = result3[0];
+        console.log(response3);
+
+
 
         if (result[0].affectedRows === 1) {
             return res.status(200).json({ message: "comment deleted" });
