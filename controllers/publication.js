@@ -12,7 +12,7 @@ exports.createPublication = async (req, res) => {
             if (req.file) {
                 try {
                     const type = req.file.filename.split('.')[1];
-                    if (type == 'jpg' || type == 'png') {
+                    if (type == 'jpg' || type == 'png' || type == 'gif') {
                         return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
                     } /*else if (type == 'mp4' || type == 'm4v') {
                         return `${req.protocol}://${req.get('host')}/videos/${req.file.filename}`;
