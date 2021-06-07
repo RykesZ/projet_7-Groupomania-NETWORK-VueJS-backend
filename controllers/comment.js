@@ -80,7 +80,7 @@ exports.getAllComments = async (req, res) => {
 
 exports.modifyComment = async (req, res) => {
     const text = req.body.text;
-    const commId = req.query.commId;
+    const commId = req.params.commId;
     console.log(commId);
     try {
         const query = `UPDATE comments SET text = ? WHERE id = ? ;`
@@ -113,7 +113,7 @@ exports.deleteComment = async (req, res) => {
             return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
         }
         const pubId = response.pubOriginId;
-        
+
         const query = "DELETE FROM comments WHERE id = ?;"
         const result = await sql.query(query, commId);
 
