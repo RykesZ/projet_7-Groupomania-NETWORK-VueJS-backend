@@ -41,7 +41,22 @@ exports.createPublication = async (req, res) => {
 
 exports.getAllPublications = async (req, res) => {
     const pageNumber = req.query.pageNumber;
-    const offset = (pageNumber - 1) * 10;
+    let offset = null;
+    if (pageNumber == 'max') {
+        try {
+            const query1 = "SELECT COUNT(*) FROM publications"
+            const result1 = await sql.query(query1);
+            const response = result1[0][0];
+            console.log({"response:": response});
+            offset = response[Object.keys(response)[0]] - 11;
+            console.log({"offset:": offset})
+        } catch(error) {
+            console.log(error);
+            return res.status(500).json({ msg: "Could not get publications" });
+        };
+    } else {
+        offset = (pageNumber - 1) * 10;
+    } 
     try {
         const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
         const result = await sql.query(query, offset);
