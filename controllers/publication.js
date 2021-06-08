@@ -49,12 +49,13 @@ exports.getAllPublications = async (req, res) => {
         const result1 = await sql.query(query1);
         const response1 = result1[0][0];
         allPubliLength = response1[Object.keys(response1)[0]];
+        nbPubliLastPage = allPubliLength % 10;
 
         // Détermine la valeur de l'offset, soit pour avoir les 10 dernières publications, soit pour avoir celles de la page indiquée
         if (pageNumber == 'max') {
             try {
                 console.log({"response:": response1});
-                offset = allPubliLength - 11;
+                offset = allPubliLength - nbPubliLastPage - 1;
                 console.log({"offset:": offset})
             } catch(error) {
                 console.log(error);
