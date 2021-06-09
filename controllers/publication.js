@@ -55,7 +55,7 @@ exports.getAllPublications = async (req, res) => {
         if (pageNumber == 'max') {
             try {
                 console.log({"response:": response1});
-                offset = allPubliLength - nbPubliLastPage - 1;
+                offset = allPubliLength - nbPubliLastPage;
                 console.log({"offset:": offset})
             } catch(error) {
                 console.log(error);
