@@ -1,5 +1,13 @@
 const sql = require('../models/db');
 
+const moderatorVerification = async (userIdToVerif) => {
+    const queryModerator = "SELECT moderator FROM users WHERE id = ? ;"
+    resultModerator = await sql.query(queryModerator, userIdToVerif);
+    const isModerator = resultModerator[0][0].moderator;
+    console.log({"isModerator ?": isModerator})
+    return isModerator;
+}
+
 exports.createComment = async (req, res) => {
     if (!req.body) {
         return res.status(400).json({
@@ -82,7 +90,23 @@ exports.modifyComment = async (req, res) => {
     const text = req.body.text;
     const commId = req.params.commId;
     console.log(commId);
+    const userId = Number(req.query.userId);
     try {
+        // Récupère autorId du commentaire
+        const query1 = "SELECT * FROM comments WHERE id = ?;"
+            const result1 = await sql.query(query1, commId);
+            const response1 = result1[0][0];
+            console.log(response1);
+        // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la modifier
+        if (response1.autorId != userId) {
+
+            let isModerator = await moderatorVerification(userId);
+            if (isModerator != true) {
+                return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
+            }
+        }
+
+
         const query = `UPDATE comments SET text = ? WHERE id = ? ;`
         const result = await sql.query(query, [text, commId]);
         console.log(result[0]);
@@ -104,13 +128,18 @@ exports.deleteComment = async (req, res) => {
     console.log({"userId:": userId});
     try {
 
+        // Récupère autorId du commentaire
         const query1 = "SELECT * FROM comments WHERE id = ?;"
         const result1 = await sql.query(query1, commId);
-        const response = result1[0][0];
-        console.log(response);
-        // Permet de vérifier que le commentaire appartient bien à l'utilisateur qui tente de le supprimer
-        if (response.autorId != userId) {
-            return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
+        const response1 = result1[0][0];
+        console.log(response1);
+        // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la modifier
+        if (response1.autorId != userId) {
+
+            let isModerator = await moderatorVerification(userId);
+            if (isModerator != true) {
+                return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
+            }
         }
         const pubId = response.pubOriginId;
 

@@ -1,6 +1,14 @@
 const sql = require('../models/db');
 const fs = require('fs');
 
+const moderatorVerification = async (userIdToVerif) => {
+    const queryModerator = "SELECT moderator FROM users WHERE id = ? ;"
+    resultModerator = await sql.query(queryModerator, userIdToVerif);
+    const isModerator = resultModerator[0][0].moderator;
+    console.log({"isModerator ?": isModerator})
+    return isModerator;
+}
+
 // Fonction qui permet de créer une nouvelle publication dans la base de données
 exports.createPublication = async (req, res) => {
     const text = req.body.text;
@@ -82,8 +90,6 @@ exports.getAllPublications = async (req, res) => {
     };
 }
 
-    
-
 exports.getOnePublication = async (req, res) => {
     const pubId = req.params.pubId;
     try {
@@ -107,15 +113,20 @@ exports.modifyPublication = async (req, res) => {
     console.log(removeFile);
     const userId = Number(req.query.userId);
     try {
-        try {
-            const query1 = "SELECT * FROM publications WHERE id = ?;"
-            const result = await sql.query(query1, pubId);
-            const response = result[0][0];
-            console.log(response);
-            // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la modifier
-            if (response.autorId != userId) {
+        // Récupère autorId de la publication
+        const query1 = "SELECT * FROM publications WHERE id = ?;"
+        const result1 = await sql.query(query1, pubId);
+        const response1 = result1[0][0];
+        console.log(response1);
+        // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la modifier
+        if (response1.autorId != userId) {
+
+            let isModerator = await moderatorVerification(userId);
+            if (isModerator != true) {
                 return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
             }
+        }
+        try {
             // Supprime l'image actuelle de la publication
             if (req.file || removeFile == 'true') {
                 if (response.imageUrl != '' || removeFile == 'true') {
@@ -175,13 +186,18 @@ exports.deletePublication = async (req, res) => {
     const userId = Number(req.query.userId);
     console.log({"pubId": pubId});
     try {
+        // Récupère autorId de la publication
         const query1 = "SELECT * FROM publications WHERE id = ?;"
         const result = await sql.query(query1, pubId);
         const response = result[0][0];
         console.log(response);
         // Permet de vérifier que la publication appartient bien à l'utilisateur qui tente de la supprimer
         if (response.autorId != userId) {
-            return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
+
+            let isModerator = await moderatorVerification(userId);
+            if (isModerator != true) {
+                return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
+            }
         }
 
         if (response.imageUrl != '') {
