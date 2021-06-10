@@ -66,7 +66,7 @@ exports.getAllPublications = async (req, res) => {
         } 
         
         try {
-            const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
+            const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl, u.moderator FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
             const result = await sql.query(query, offset);
             const response = result[0];
             if (result.length === 0) {
