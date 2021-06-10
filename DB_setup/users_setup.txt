@@ -12,6 +12,7 @@ publicationsLiked TEXT,
 publicationsMasked TEXT,
 commentsCreated TEXT,
 deleted BOOLEAN,
+moderator BOOLEAN,
 PRIMARY KEY (id),
 CONSTRAINT UC_User UNIQUE (id, email)
 )
