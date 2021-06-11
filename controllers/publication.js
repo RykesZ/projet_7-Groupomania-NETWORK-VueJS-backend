@@ -53,7 +53,7 @@ exports.getAllPublications = async (req, res) => {
     let allPubliLength = null;
 
     try {
-        const query1 = "SELECT COUNT(*) FROM publications"
+        const query1 = "SELECT COUNT(*) FROM publications INNER JOIN users ON publications.autorId = users.id WHERE users.deleted = FALSE;"
         const result1 = await sql.query(query1);
         const response1 = result1[0][0];
         allPubliLength = response1[Object.keys(response1)[0]];
