@@ -15,7 +15,7 @@ exports.signup = async (req, res) => {
         console.log(password);
         let hash = await bcrypt.hash(password, 10);
         try {
-            const query = `INSERT INTO users (firstname, lastname, email, password, birthdate, gender, imageUrl, publicationsCreated, publicationsLiked, publicationsMasked, commentsCreated, deleted, moderator) VALUES (?, ?, ?, ?, ?, ?, "http://localhost:5000/images/PP_default.png", "", "", "", "", 0, 0);`
+            const query = `INSERT INTO users (firstname, lastname, email, password, birthdate, gender, imageUrl, deleted, moderator) VALUES (?, ?, ?, ?, ?, ?, "http://localhost:5000/images/PP_default.png", 0, 0);`
             const result = await sql.query(query, [firstname, lastname, email, hash, birthdate, gender]);
             /*console.log(result);
             console.log(result[0].affectedRows);*/
