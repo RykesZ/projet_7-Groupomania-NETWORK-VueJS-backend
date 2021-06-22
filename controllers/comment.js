@@ -141,7 +141,7 @@ exports.deleteComment = async (req, res) => {
                 return res.status(401).json({ message: "User does not have adequate rights to act on this comment" })
             }
         }
-        const pubId = response.pubOriginId;
+        const pubId = response1.pubOriginId;
 
         const query = "DELETE FROM comments WHERE id = ?;"
         const result = await sql.query(query, commId);

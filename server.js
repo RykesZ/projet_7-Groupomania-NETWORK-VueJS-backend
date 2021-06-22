@@ -1,10 +1,7 @@
 require('dotenv').config()
 const express = require("express");
 const bodyParser = require('body-parser');
-const multer = require ('multer');
-const upload = multer();
 const path = require('path');
-const formidable = require('express-formidable');
 
 const userRoutes = require('./routes/user');
 const publicationRoutes = require('./routes/publication');
