@@ -1,5 +1,6 @@
 const sql = require('../models/db');
 
+// Fonction qui permet de vérifier si l'utilisateur qui envoie une requête pour agir sur une publication ou un commentaire d'un autre utilisateur est un modérateur qui en a le droit
 const moderatorVerification = async (userIdToVerif) => {
     const queryModerator = "SELECT moderator FROM users WHERE id = ? ;"
     resultModerator = await sql.query(queryModerator, userIdToVerif);
@@ -8,6 +9,7 @@ const moderatorVerification = async (userIdToVerif) => {
     return isModerator;
 }
 
+// Fonction qui permet à un utilisateur de créer un commentaire associé à une publication
 exports.createComment = async (req, res) => {
     if (!req.body) {
         return res.status(400).json({
@@ -41,7 +43,7 @@ exports.createComment = async (req, res) => {
             throw(error);
         };*/
 
-
+        // Compte le nombre de commentaires que possède maintenant la publication
         const query2 = `SELECT COUNT(*) FROM comments where pubOriginId = ?;`;
         const result2 = await sql.query(query2, [pubId]);
         const response2 = result2[0][0];
@@ -49,6 +51,7 @@ exports.createComment = async (req, res) => {
         const newCommCount = response2[Object.keys(response2)[0]];
         console.log(newCommCount);
 
+        // Met à jour le nombre de commentaires que possède maintenant la publication
         const query3 = `UPDATE publications SET comments = ? WHERE id = ?;`;
         const result3 = await sql.query(query3, [newCommCount, pubId]);
         const response3 = result3[0];
@@ -66,7 +69,7 @@ exports.createComment = async (req, res) => {
     };
 };
 
-// Envoie tous les commentaires d'une publication identifiée par son id
+// Fonction qui permet de récupérer tous les commentaires d'une publication identifiée par son id
 exports.getAllComments = async (req, res) => {
     const pubOriginId = req.params.pubId;
     console.log(pubOriginId);
@@ -86,6 +89,7 @@ exports.getAllComments = async (req, res) => {
     }
 };
 
+// Fonction qui permet à un utilisateur de modifier son commentaire (ou de modifier delui d'un autre s'il est modérateur)
 exports.modifyComment = async (req, res) => {
     const text = req.body.text;
     const commId = req.params.commId;
@@ -121,6 +125,7 @@ exports.modifyComment = async (req, res) => {
     };
 };
 
+// Fonction qui permet à un utilisateur de supprimer son commentaire (ou de supprimer celui d'un autre s'il est modérateur)
 exports.deleteComment = async (req, res) => {
     const commId = req.query.commId;
     console.log({"commId:": commId});
@@ -146,7 +151,7 @@ exports.deleteComment = async (req, res) => {
         const query = "DELETE FROM comments WHERE id = ?;"
         const result = await sql.query(query, commId);
 
-
+        // Compte le nombre de commentaires que possède maintenant la publication
         const query2 = `SELECT COUNT(*) FROM comments where pubOriginId = ?;`;
         const result2 = await sql.query(query2, [pubId]);
         const response2 = result2[0][0];
@@ -154,6 +159,7 @@ exports.deleteComment = async (req, res) => {
         const newCommCount = response2[Object.keys(response2)[0]];
         console.log(newCommCount);
 
+        // Met à jour le nombre de commentaires que possède maintenant la publication
         const query3 = `UPDATE publications SET comments = ? WHERE id = ?;`;
         const result3 = await sql.query(query3, [newCommCount, pubId]);
         const response3 = result3[0];

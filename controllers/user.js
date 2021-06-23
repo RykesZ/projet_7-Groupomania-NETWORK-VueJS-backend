@@ -4,6 +4,7 @@ const sql = require('../models/db');
 const fs = require('fs');
 const fsPromises = fs.promises;
 
+// Fonction qui permet à un nouvel utilisateur de s'inscrire dans la BDD avec les infos du formulaire d'inscription
 exports.signup = async (req, res) => {
     if (!req.body) {
         return res.status(400).json({
@@ -35,6 +36,8 @@ exports.signup = async (req, res) => {
     };
 };
 
+
+// Fonction qui permet à l'utilisateur de s'authentifier pour accéder au contenu de la web app à partir de l'email et du mdp qu'il a fourni
 exports.login = async (req, res) => {
     const { email, password } = req.body.data;
     try {
@@ -46,6 +49,7 @@ exports.login = async (req, res) => {
         console.log(rows[0][0].password);*/
         const hashedPass = rows[0][0].password;
         const userId = rows[0][0].id;
+        // Vérifie que le mdp fourni correspond à celui hashé enregistré dans la BDD puis fourni un token d'authentification si c'est le cas
         try {
                 let valid = await bcrypt.compare(password, hashedPass);
             if (!valid) {
@@ -69,6 +73,8 @@ exports.login = async (req, res) => {
     };
 };
 
+
+// Fonction qui permet de récupérer les informations non-sensibles d'un utilisateur à partir de son id
 exports.getUserInfo = async (req, res) => {
     if (!req.query) {
         return res.status(400).json({
@@ -99,7 +105,10 @@ exports.getUserInfo = async (req, res) => {
     };
 };
 
+
+// Fonction qui permet à un utilisateur de modifier les informations personnelles de son compte
 exports.modifyUser = async (req, res) => {
+    // Remplace les champs du formulaire vides ("null") par la valeur null qui sera reconnue par la BDD
     try {
         let fields = req.body;
         for (let field in fields) {
@@ -180,6 +189,8 @@ exports.modifyUser = async (req, res) => {
     
 };
 
+
+// Fonction qui permet à un utilisateur de supprimer son compte, avec l'option de garder en ligne ses commentaires anonymisés, ou de supprimer ses publications et commentaires entièrement
 exports.deleteUser = async (req, res) => {
     const userId = Number(req.query.userId);
     const deletePubAndComms = req.query.deletePubAndComms;
@@ -207,7 +218,7 @@ exports.deleteUser = async (req, res) => {
     deleteOldImage();
 
 
-
+    // Si l'option est désactivée, anonymise le compte, ce qui cachera les publications aux autres utilisateurs, tout en laissant visible les commentaires
     if (deletePubAndComms !== "on") {
         try {
             const query = `UPDATE users SET firstname = "Utilisateur", lastname = "supprimé", email = "", password = "", birthdate = 0000-00-00,imageUrl = "http://localhost:5000/images/PP_default.png", deleted = TRUE WHERE id = ? ;`
@@ -220,6 +231,7 @@ exports.deleteUser = async (req, res) => {
         } catch(error) {
             return res.status(500).json({ error })
         };
+    // Si l'option est activée, supprime entièrement le compte, ses publications, et ses commentaires
     } else if (deletePubAndComms === "on") {
         try {
             const query = `DELETE FROM users WHERE id = ? ;`

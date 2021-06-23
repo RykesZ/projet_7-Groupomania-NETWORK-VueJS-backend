@@ -1,6 +1,7 @@
 const sql = require('../models/db');
 const fs = require('fs');
 
+// Fonction qui permet de vérifier si l'utilisateur qui envoie une requête pour agir sur une publication ou un commentaire d'un autre utilisateur est un modérateur qui en a le droit
 const moderatorVerification = async (userIdToVerif) => {
     const queryModerator = "SELECT moderator FROM users WHERE id = ? ;"
     resultModerator = await sql.query(queryModerator, userIdToVerif);
@@ -9,7 +10,7 @@ const moderatorVerification = async (userIdToVerif) => {
     return isModerator;
 }
 
-// Fonction qui permet de créer une nouvelle publication dans la base de données
+// Fonction qui permet à un utilisateur de créer une nouvelle publication dans la base de données
 exports.createPublication = async (req, res) => {
     const text = req.body.text;
     const autorId = req.body.userId;
@@ -47,11 +48,14 @@ exports.createPublication = async (req, res) => {
     };
 };
 
+
+// Fonction qui permet de récupérer les publications disponibles par tranche de 10, avec un offset en fonction de la page
 exports.getAllPublications = async (req, res) => {
     const pageNumber = req.query.pageNumber;
     let offset = null;
     let allPubliLength = null;
 
+    // Compte le nombre de publications dont le créateur ne sont pas des utilisateurs supprimés, pour la pagination
     try {
         const query1 = "SELECT COUNT(*) FROM publications INNER JOIN users ON publications.autorId = users.id WHERE users.deleted = FALSE;"
         const result1 = await sql.query(query1);
@@ -73,6 +77,7 @@ exports.getAllPublications = async (req, res) => {
             offset = (pageNumber - 1) * 10;
         } 
         
+        // Récupère 10 publications dont l'utilisateur n'est pas supprimé en fonction de l'offset déterminé par le numéro de la page à afficher
         try {
             const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl, u.moderator FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
             const result = await sql.query(query, offset);
@@ -90,6 +95,7 @@ exports.getAllPublications = async (req, res) => {
     };
 }
 
+// Fonction qui permet de récupérer les informations d'une seule publication à partir de son id
 exports.getOnePublication = async (req, res) => {
     const pubId = req.params.pubId;
     try {
@@ -106,6 +112,7 @@ exports.getOnePublication = async (req, res) => {
     };
 };
 
+// Fonction qui permet à un utilisateur de modifier sa publication (ou de modifier celle d'un autre s'il est modérateur)
 exports.modifyPublication = async (req, res) => {
     const text = req.body.text;
     const pubId = req.params.pubId;
@@ -181,6 +188,7 @@ exports.modifyPublication = async (req, res) => {
     };
 };
 
+// Fonction qui permet à un utilisateur de supprimer sa publication (ou de supprimer celle d'un autre s'il est modérateur)
 exports.deletePublication = async (req, res) => {
     const pubId = req.query.pubId;
     const userId = Number(req.query.userId);
@@ -200,6 +208,7 @@ exports.deletePublication = async (req, res) => {
             }
         }
 
+        // Supprime l'image stockée de la publication
         if (response.imageUrl != '') {
             try {
                 const filename = await response.imageUrl.split('/images/')[1];
@@ -213,6 +222,7 @@ exports.deletePublication = async (req, res) => {
                 return res.status(500).json({ message: "Could not delete file attached to publication" });
             } 
         }
+        // Supprime la publication de la BDD
         const query2 = "DELETE FROM publications WHERE id = ?;"
         const result2 = await sql.query(query2, pubId);
 
@@ -229,7 +239,7 @@ exports.deletePublication = async (req, res) => {
     };
 };
 
-// Besoin de : pubId (id de la publication) en paramètre d'URL, like(int de valeur 0 ou 1), userId(id de l'utilisateur ayant liké/disliké)
+// Fonction qui permet à un utilisateur de like/dislike une publication à partir de l'id utilisateur, de l'id de publication, et de la valeur de like
 exports.likePublication = async (req, res) => {
     const pubId = req.params.pubId;
     const userId = req.query.userId;
