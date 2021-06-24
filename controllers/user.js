@@ -4,6 +4,48 @@ const sql = require('../models/db');
 const fs = require('fs');
 const fsPromises = fs.promises;
 
+
+const verificationProfilInfos = (firstname, lastname, email, password, birthdate, gender) => {
+    if (email && email != null) {
+        if (!email.match(/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/) || email.length > 255) {
+            return res.status(500).json({ error: "Ceci n'est pas une adresse e-mail valide"});
+        }
+    }
+
+    if (firstname && firstname != null) {
+        if (!firstname.match(/^\D{2,255}$/)) {
+            return res.status(500).json({ error: "Prénom trop long ou trop court"});
+        }
+    }
+    
+    if (lastname && lastname != null) {
+        if (!lastname.match(/^\D{2,255}$/)) {
+            return res.status(500).json({ error: "Nom trop long ou trop court"});
+        }
+    }
+
+    if (birthdate && birthdate != null) {
+        if (!birthdate.match(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/)) {
+            return res.status(500).json({ error: "Ceci n'est pas une date de naissance valide"});
+        }
+    }
+
+    if (gender && gender != null) {
+        if (!gender.match(/^[HF ]$/)) {
+            return res.status(500).json({ error: "Ceci n'est pas un genre parmi ceux proposés"});
+        }
+    }
+    
+    if (password && password != null) {
+        if (!password.match(/^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/)) {
+            return res.status(500).json({ error: "Votre mot de passe doit faire entre 8 et 16 caractères sans espace, comporter au moins un chiffre, une majuscule, une minuscule, et un caractère spécial"});
+        }
+    }
+}
+
+
+
+
 // Fonction qui permet à un nouvel utilisateur de s'inscrire dans la BDD avec les infos du formulaire d'inscription
 exports.signup = async (req, res) => {
     if (!req.body) {
@@ -12,6 +54,15 @@ exports.signup = async (req, res) => {
         });
     }
     const { firstname, lastname, email, password, birthdate, gender } = req.body.data;
+
+    if (firstname, lastname, email, password, birthdate, gender && firstname != null && lastname != null && email != null && password != null && birthdate != null && gender != null) {
+        verificationProfilInfos(firstname, lastname, email, password, birthdate, gender);
+    } else {
+        return res.status(500).json({ error: "Tous les champs du formulaire doivent être remplis"});
+    }
+    
+
+    
     try {
         console.log(password);
         let hash = await bcrypt.hash(password, 10);
@@ -117,6 +168,9 @@ exports.modifyUser = async (req, res) => {
             }
         }
         const { userId, firstname, lastname, email, password, birthdate, gender } = fields;
+
+        verificationProfilInfos(firstname, lastname, email, password, birthdate, gender);
+
         let imageUrl = null;
         // Obtient le filename de l'image de profil actuelle
         const getFileName = async () => {
@@ -218,8 +272,8 @@ exports.deleteUser = async (req, res) => {
     deleteOldImage();
 
 
-    // Si l'option est désactivée, anonymise le compte, ce qui cachera les publications aux autres utilisateurs, tout en laissant visible les commentaires
-    if (deletePubAndComms !== "on") {
+    // Si l'option est activée, anonymise le compte, supprime les publications, tout en laissant visible les commentaires
+    if (deletePubAndComms === "on") {
         try {
             const query = `UPDATE users SET firstname = "Utilisateur", lastname = "supprimé", email = "", password = "", birthdate = 0000-00-00,imageUrl = "http://localhost:5000/images/PP_default.png", deleted = TRUE WHERE id = ? ;`
             const result = await sql.query(query, userId)
@@ -227,12 +281,17 @@ exports.deleteUser = async (req, res) => {
                 console.log(result[0].affectedRows);
                 return res.status(500).json({ message: "user not found" });
             }
-            return res.status(200).json({ message: "user deleted" })
+
+            const query2 = `DELETE FROM publications WHERE autorId = ? ;`
+            const result2 = await sql.query(query2, userId);
+
+
+            return res.status(200).json({ message: "user soft-deleted" })
         } catch(error) {
             return res.status(500).json({ error })
         };
-    // Si l'option est activée, supprime entièrement le compte, ses publications, et ses commentaires
-    } else if (deletePubAndComms === "on") {
+    // Si l'option est désactivée, supprime entièrement le compte, ses publications, et ses commentaires
+    } else if (deletePubAndComms !== "on") {
         try {
             const query = `DELETE FROM users WHERE id = ? ;`
             const result = await sql.query(query, userId)
