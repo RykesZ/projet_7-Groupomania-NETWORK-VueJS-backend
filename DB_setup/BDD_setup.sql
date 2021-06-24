@@ -29,6 +29,7 @@ likes SMALLINT NOT NULL,
 comments SMALLINT UNSIGNED,
 date_insertion DATETIME,
 date_modification DATETIME,
+moderationIntervention BOOLEAN,
 PRIMARY KEY (id),
 UNIQUE (id)
 )

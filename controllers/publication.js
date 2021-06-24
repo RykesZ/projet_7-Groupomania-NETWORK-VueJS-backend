@@ -79,7 +79,7 @@ exports.getAllPublications = async (req, res) => {
         
         // Récupère 10 publications dont l'utilisateur n'est pas supprimé en fonction de l'offset déterminé par le numéro de la page à afficher
         try {
-            const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, u.firstname, u.lastname, u.imageUrl, u.moderator FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
+            const query = "SELECT p.id AS pubId, p.text, p.autorId, p.imageUrl AS pubImageUrl, p.usersLiked, p.likes, p.comments, p.date_insertion, p.date_modification, p.moderationIntervention, u.firstname, u.lastname, u.imageUrl, u.moderator FROM publications AS p INNER JOIN users AS u ON p.autorId = u.id WHERE u.deleted = FALSE ORDER BY date_insertion DESC LIMIT 10 OFFSET ? ;"
             const result = await sql.query(query, offset);
             const response = result[0];
             if (result.length === 0) {
@@ -119,6 +119,7 @@ exports.modifyPublication = async (req, res) => {
     const removeFile = req.body.removeFile;
     console.log(removeFile);
     const userId = Number(req.query.userId);
+    let lastModifiedByModerator = false;
     try {
         // Récupère autorId de la publication
         const query1 = "SELECT * FROM publications WHERE id = ?;"
@@ -131,6 +132,8 @@ exports.modifyPublication = async (req, res) => {
             let isModerator = await moderatorVerification(userId);
             if (isModerator != true) {
                 return res.status(401).json({ message: "User does not have adequate rights to act on this publication" })
+            } else {
+                lastModifiedByModerator = true;
             }
         }
         try {
@@ -174,8 +177,8 @@ exports.modifyPublication = async (req, res) => {
             };
         };
         imageUrl = await newImageUrl();
-        const query = `UPDATE publications SET text = ?, imageUrl = ? WHERE id = ?;`
-        const result = await sql.query(query, [text, imageUrl, pubId]);
+        const query = `UPDATE publications SET text = ?, imageUrl = ?, moderationIntervention = ? WHERE id = ?;`
+        const result = await sql.query(query, [text, imageUrl, lastModifiedByModerator, pubId]);
 
         if (result[0].affectedRows === 1) {
             return res.status(200).json({ message: "publication modified" });
