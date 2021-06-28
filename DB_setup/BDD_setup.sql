@@ -42,6 +42,7 @@ autorId SMALLINT UNSIGNED NOT NULL,
 pubOriginId MEDIUMINT UNSIGNED NOT NULL,
 date_insertion DATETIME,
 date_modification DATETIME,
+moderationIntervention BOOLEAN,
 PRIMARY KEY (id),
 UNIQUE (id)
 )
